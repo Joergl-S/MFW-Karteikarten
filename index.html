@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medienfachwirt Karteikarten</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --bg-color: #f5f5f5;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --font-family: Arial, sans-serif; /* Standard-Schriftart */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 70px; /* Platz für die Bottom Navigation */
+        }
+
+        .navbar {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.3s;
+            color: white; /* Icons in der Navbar weiß */
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Kategorieauswahl */
+        #categoryScreen h2, #settingsScreen h2, #statsScreen h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .category-btn {
+            background: var(--card-bg);
+            border: 2px solid var(--primary-color);
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+        }
+
+        .category-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Karteikarte */
+        .progress-bar {
+            background: #e0e0e0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            height: 100%;
+            transition: width 0.5s;
+            width: 0%;
+        }
+
+        #progressText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: #333;
+        }
+
+        .card-container {
+            perspective: 1000px;
+            margin: 2rem 0;
+        }
+
+        .flashcard {
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            padding: 2rem;
+            min-height: 300px;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .card-front {
+            display: none;
+        }
+
+        .flashcard.flipped .card-back {
+            display: block;
+        }
+
+        .card-badge {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        #cardTerm {
+            font-size: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .flip-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: block;
+            margin: 2rem auto;
+        }
+
+        .flip-btn:hover {
+            background: #1976D2;
+            transform: scale(1.05);
+        }
+
+        .card-back {
+            display: none;
+        }
+
+        .card-back h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .example-section {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .example-section h4 {
+            color: var(--success-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .answer-btn {
+            flex: 1;
+            padding: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .answer-btn.wrong {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .answer-btn.correct {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .answer-btn:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        .stats-mini {
+            display: flex;
+            justify-content: space-around;
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            color: var(--text-color);
+        }
+        .stats-mini strong {
+            color: var(--primary-color);
+        }
+
+        .secondary-btn, .primary-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .primary-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .secondary-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .secondary-btn.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* Einstellungen */
+        .setting-group {
+            margin: 1.5rem 0;
+        }
+
+        .setting-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .setting-group select,
+        .setting-group input[type="color"],
+        .setting-group input[type="file"] {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            appearance: none; /* Für bessere Browser-Konsistenz */
+        }
+        .setting-group input[type="file"] {
+             padding: 0.5rem; /* Weniger Padding für Dateiupload */
+        }
+
+
+        /* Statistik */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .stat-card p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 200px;
+            margin-top: 2rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 99;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            transition: background 0.3s;
+            color: var(--primary-color);
+        }
+
+        .nav-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .nav-btn:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            #cardTerm {
+                font-size: 1.5rem;
+            }
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+            .navbar h1 {
+                font-size: 1.2rem;
+            }
+            .icon-btn {
+                font-size: 1.2rem;
+            }
+            .answer-btn {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <h1>📚 Medienfachwirt Lernkarten</h1>
+        <button id="settingsBtn" class="icon-btn" onclick="showScreen('settings')">⚙️</button>
+    </nav>
+
+    <!-- Hauptcontainer -->
+    <div class="container">
+        <!-- Kategorieauswahl -->
+        <div id="categoryScreen" class="screen active">
+            <h2>Wähle deine Kategorie</h2>
+            <div class="category-grid">
+                <button class="category-btn" data-category="alle">Alle Begriffe</button>
+                <button class="category-btn" data-category="recht">Recht</button>
+                <button class="category-btn" data-category="it">IT & Digital</button>
+                <button class="category-btn" data-category="marketing">Marketing</button>
+                <button class="category-btn" data-category="print">Print & Produktion</button>
+                <button class="category-btn" data-category="personal">Personal</button>
+                <button class="category-btn" data-category="bwl">BWL & Kalkulation</button>
+                <button class="category-btn" data-category="qm">Qualitätsmanagement</button>
+            </div>
+            <button id="importBtn" class="secondary-btn">📥 Import CSV</button>
+        </div>
+
+        <!-- Karteikarten-Ansicht -->
+        <div id="cardScreen" class="screen">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+                <span id="progressText">0 / 0</span>
+            </div>
+
+            <div class="card-container">
+                <div id="flashcard" class="flashcard">
+                    <div class="card-front">
+                        <span class="card-badge" id="cardCategory"></span>
+                        <h2 id="cardTerm"></h2>
+                        <button id="flipBtn" class="flip-btn">🔄 Erklärung zeigen</button>
+                    </div>
+                    <div class="card-back hidden">
+                        <h3>Erklärung:</h3>
+                        <p id="cardExplanation"></p>
+                        <div class="example-section">
+                            <h4>💡 Beispiel:</h4>
+                            <p id="cardExample"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="wrongBtn" class="answer-btn wrong">❌ Nicht gewusst</button>
+                <button id="correctBtn" class="answer-btn correct">✅ Gewusst</button>
+            </div>
+
+            <div class="stats-mini">
+                <span>Box: <strong id="currentBox">1</strong></span>
+                <span>Richtig: <strong id="correctCount">0</strong></span>
+                <span>Falsch: <strong id="wrongCount">0</strong></span>
+            </div>
+
+            <button id="backToCategories" class="secondary-btn">← Kategorien</button>
+        </div>
+
+        <!-- Einstellungen -->
+        <div id="settingsScreen" class="screen">
+            <h2>⚙️ Einstellungen</h2>
+            
+            <div class="setting-group">
+                <label for="fontSelect">Schriftart:</label>
+                <select id="fontSelect">
+                    <option value="Arial, sans-serif">Arial (Standard)</option>
+                    <option value="'Georgia', serif">Georgia (Seriös)</option>
+                    <option value="'Verdana', sans-serif">Verdana (Gut lesbar)</option>
+                    <option value="'Roboto', sans-serif">Roboto (Modern)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="bgColor">Hintergrundfarbe:</label>
+                <input type="color" id="bgColor" value="#f5f5f5">
+            </div>
+
+            <div class="setting-group">
+                <label for="textColor">Textfarbe:</label>
+                <input type="color" id="textColor" value="#333333">
+            </div>
+
+            <button id="exportBtn" class="secondary-btn">📤 Export CSV</button>
+            <button id="resetProgressBtn" class="secondary-btn danger">🔄 Fortschritt zurücksetzen</button>
+            <button id="closeSettings" class="primary-btn" onclick="showScreen('category')">Zurück</button>
+        </div>
+
+        <!-- Statistik -->
+        <div id="statsScreen" class="screen">
+            <h2>📊 Deine Statistik</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalCards">0</h3>
+                    <p>Gesamt Begriffe</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="masteredCards">0</h3>
+                    <p>Gemeistert (Box 5)</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="overallSuccessRate">0%</h3>
+                    <p>Gesamterfolgsquote</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="currentStreak">0</h3>
+                    <p>Lern-Tage-Streak</p>
+                </div>
+            </div>
+            
+            <canvas id="progressChart"></canvas>
+            
+            <button id="closeStats" class="primary-btn" onclick="showScreen('category')">Zurück</button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-btn active" data-screen="category">🏠 Home</button>
+        <button class="nav-btn" data-screen="stats">📊 Statistik</button>
+        <button class="nav-btn" data-screen="settings">⚙️ Einstellungen</button>
+    </div>
+
+    <!-- Import Dialog (hidden file input) -->
+    <input type="file" id="fileInput" accept=".csv" style="display:none;">
+
+    <script>
+        // ERWEITERTE Karteikarten-Datenbank mit mindestens 20 Begriffen pro Kategorie
+        const flashcards = [
+            // ==================== RECHT (25 Begriffe) ====================
+            {
+                term: "DSGVO",
+                explanation: "Die Datenschutz-Grundverordnung (DSGVO) ist eine EU-Verordnung zum Schutz personenbezogener Daten. Sie regelt die Verarbeitung personenbezogener Daten durch private Unternehmen und öffentliche Stellen [24].",
+                example: "Bei der EduSmart Lernplattform müssen für die Erfassung biometrischer Daten minderjähriger Nutzer besondere Einwilligungen der Eltern eingeholt werden, da diese als besonders sensible Daten gelten.",
+                categories: ["recht", "it"],
+                box: 1,
+                correctCount: 0 // Anzahl der korrekt aufeinanderfolgenden Antworten
+            },
+            {
+                term: "Fernabsatzvertrag",
+                explanation: "Ein Vertrag zwischen Unternehmer und Verbraucher, der ausschließlich unter Verwendung von Fernkommunikationsmitteln (z.B. Internet, Telefon) geschlossen wird, § 312c BGB [23].",
+                example: "Ein Online-Shop der Vintage Vibes GmbH schließt mit Kunden Fernabsatzverträge ab. Der Kunde hat ein 14-tägiges Widerrufsrecht [23].",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Impressumspflicht",
+                explanation: "Die Pflicht zur Angabe verantwortlicher Stellen bei Drucksachen (einfaches oder erweitertes Impressum) und bei Telemedien/Digitalen Diensten (Anbieterkennung) [23].",
+                example: "Die OnlineFurniture Trends GmbH muss auf ihrer Website eine vollständige Anbieterkennung mit Name, Anschrift, Vertretungsberechtigten und Kontaktdaten angeben [1].",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Unterlassungsanspruch",
+                explanation: "Ein Anspruch, der verlangt, dass eine bestimmte Handlung (z.B. Rechtsverletzung) in Zukunft unterlassen wird. Teil des zivilrechtlichen 'Dreiers': Unterlassung, Beseitigung, Schadensersatz [23].",
+                example: "Ein Konkurrent kopiert das Logo der DataCraft Solutions AG. Diese kann einen Unterlassungsanspruch geltend machen, damit die Nutzung des Logos gestoppt wird.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Einwilligung (datenschutzrechtlich)",
+                explanation: "Eine freiwillige, informierte und eindeutige Willensbekundung, mit der eine betroffene Person ihre Zustimmung zur Verarbeitung ihrer personenbezogenen Daten gibt (Art. 4 Nr. 11, Art. 7 DSGVO) [23], [24].",
+                example: "Bevor die EduSmart Plattform Eye-Tracking-Daten speichert, muss der Nutzer aktiv seine Einwilligung durch Anklicken einer Checkbox erteilen [24].",
+                categories: ["recht", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Markenrecht",
+                explanation: "Gewerbliches Schutzrecht zum Schutz von Wort- und/oder Bildzeichen mit Unterscheidungskraft. Rechtsverletzung führt zu Unterlassungs- und Schadensersatzansprüchen (§§ 14, 15 MarkenG) [24].",
+                example: "Die Marke 'PixelCraft Studios' ist geschützt. Ein Konkurrent darf keinen ähnlichen Namen verwenden, der zu Verwechslungen führen könnte [24].",
+                categories: ["recht", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "UWG (Unlauterer Wettbewerb)",
+                explanation: "Das Gesetz gegen unlauteren Wettbewerb schützt vor unlauterem Wettbewerb, verhindert Monopole und dient dem Verbraucherschutz. Es unterscheidet zwischen B2B und B2C mit unterschiedlichen Regeln [25].",
+                example: "SmartFit Solutions darf in ihrer Werbung keine unwahren Tatsachen über Konkurrenzprodukte verbreiten oder getarnte Werbung betreiben [25].",
+                categories: ["recht", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Widerrufsrecht",
+                explanation: "Das Recht von Verbrauchern, einen geschlossenen Vertrag innerhalb von 14 Tagen ohne Angabe von Gründen zu widerrufen. Gilt insbesondere bei Fernabsatzverträgen [23], [1].",
+                example: "Ein Kunde bestellt eine Vintage-Jacke online bei VintageVibes. Er hat 14 Tage Zeit, die Ware zurückzusenden, ohne Gründe anzugeben.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Anbieterkennung",
+                explanation: "Pflichtangaben auf Websites gemäß Telemediengesetz, die u.a. Namen, Anschrift, Vertretungsberechtigte, Kontaktdaten und Registernummer umfassen [1].",
+                example: "AllesDRUCK GmbH muss auf ihrer Website neben Name und Adresse auch die Geschäftsführer, das Handelsregister und die Umsatzsteuer-ID angeben [1].",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Datenschutzerklärung",
+                explanation: "Pflichtdokument nach Art. 12 ff DSGVO, das Nutzer über Art, Umfang und Zweck der Datenverarbeitung, Speicherdauer, Empfänger und ihre Rechte informiert [1].",
+                example: "Die EduSmart Plattform muss in ihrer Datenschutzerklärung erklären, welche biometrischen Daten sie sammelt, wie lange sie gespeichert werden und wer darauf Zugriff hat.",
+                categories: ["recht", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Verantwortlicher (DSGVO)",
+                explanation: "Natürliche oder juristische Person, die allein oder gemeinsam mit anderen über die Zwecke und Mittel der Verarbeitung personenbezogener Daten entscheidet (Art. 4 Nr.7 DSGVO) [24], [25].",
+                example: "Die EduSmart Innovators GmbH ist Verantwortlicher für die Verarbeitung der Lernerdaten und muss alle Pflichten der DSGVO erfüllen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Auftragsverarbeiter",
+                explanation: "Person oder Stelle, die personenbezogene Daten im Auftrag des Verantwortlichen verarbeitet (Art. 4 Nr. 8 DSGVO). Erfordert einen Auftragsverarbeitungsvertrag [24].",
+                example: "Ein Cloud-Hosting-Anbieter, der die Server für EduSmart betreibt, ist Auftragsverarbeiter und benötigt einen entsprechenden Vertrag.",
+                categories: ["recht", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Beseitigungsanspruch",
+                explanation: "Anspruch auf Beseitigung eines rechtswidrigen Zustands, z.B. Entfernung eines urheberrechtsverletzenden Bildes. Teil des zivilrechtlichen 'Dreiers' [23].",
+                example: "Ein Fotograf entdeckt sein Bild auf der Website eines Konkurrenten ohne Erlaubnis. Er kann Beseitigung (Löschung) verlangen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Schadensersatz",
+                explanation: "Anspruch auf Ausgleich eines entstandenen Schadens bei Verschulden (Vorsatz oder Fahrlässigkeit). Teil des zivilrechtlichen 'Dreiers' [23].",
+                example: "Wenn durch die unrechtmäßige Nutzung eines Logos ein finanzieller Schaden entsteht, kann zusätzlich zu Unterlassung auch Schadensersatz verlangt werden.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Geschäftsfähigkeit",
+                explanation: "Die Fähigkeit, wirksam Rechtsgeschäfte vorzunehmen. Unterschieden wird zwischen voll geschäftsfähig (ab 18), beschränkt geschäftsfähig (7-17) und geschäftsunfähig (unter 7) [23].",
+                example: "Ein 16-jähriger Schüler kann nur mit Zustimmung der Eltern einen Vertrag über ein teures Smartphone abschließen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "AGB (Allgemeine Geschäftsbedingungen)",
+                explanation: "Einseitig vorformulierte Vertragsbedingungen für eine Vielzahl von Verträgen. Unterliegen besonderen Transparenz- und Inhaltskontrollvorschriften (§§ 305 ff. BGB) [23], [24].",
+                example: "Der Online-Shop von VintageVibes nutzt AGB, die u.a. Lieferbedingungen, Zahlungsmodalitäten und Gewährleistungsregeln festlegen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Werkvertrag",
+                explanation: "Vertrag, bei dem ein Erfolg geschuldet wird (§ 631 BGB). Der Auftragnehmer muss ein bestimmtes Ergebnis liefern [23].",
+                example: "Eine Werbeagentur verpflichtet sich, eine funktionsfähige Website zu erstellen. Erst bei Abnahme des funktionierenden Produkts ist die Leistung erbracht.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kaufvertrag",
+                explanation: "Vertrag über den Kauf einer Sache oder eines Rechts (§ 433 BGB). Der Verkäufer überträgt Eigentum, der Käufer zahlt den Kaufpreis [23].",
+                example: "AllesDRUCK kauft eine neue Druckmaschine. Der Hersteller übergibt die Maschine, AllesDRUCK zahlt den vereinbarten Preis.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Dienstvertrag",
+                explanation: "Vertrag, bei dem eine Dienstleistung geschuldet wird, aber kein bestimmter Erfolg (§ 611 BGB). Basis für Arbeitsverträge [23].",
+                example: "Ein freier Grafikdesigner wird stundenweise für Creative Visions tätig. Er schuldet seine Arbeitskraft, aber nicht zwingend ein fertiges Produkt.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Verbraucher",
+                explanation: "Jede natürliche Person, die ein Rechtsgeschäft zu Zwecken abschließt, die überwiegend weder ihrer gewerblichen noch ihrer selbstständigen beruflichen Tätigkeit zugerechnet werden können (§ 13 BGB) [24], [25].",
+                example: "Ein Privatperson, die bei OnlineFurniture ein Sofa für ihr Wohnzimmer bestellt, ist Verbraucher und genießt besonderen Schutz.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Unternehmer",
+                explanation: "Jede natürliche oder juristische Person, die bei Abschluss eines Rechtsgeschäfts in Ausübung ihrer gewerblichen oder selbstständigen beruflichen Tätigkeit handelt (§ 14 BGB) [24], [25].",
+                example: "Die AllesDRUCK GmbH ist Unternehmer, wenn sie Druckaufträge annimmt oder Verträge mit Lieferanten abschließt.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kaufmann",
+                explanation: "Gewerbetreibender, der ein Handelsgewerbe betreibt und im Handelsregister eingetragen ist (§§ 1 ff. HGB). Für Kaufleute gelten besondere Regelungen wie die Rügepflicht [25].",
+                example: "Die AllesDRUCK GmbH ist als Kaufmann im Handelsregister eingetragen und muss bei Lieferungen sofort prüfen und Mängel unverzüglich rügen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Gegendarstellung",
+                explanation: "Verteidigungsmöglichkeit gegen persönlichkeitsrechtsverletzende Tatsachendarstellung in Medien. Muss unverzüglich geltend gemacht werden (§ 10 PresseG) [23].",
+                example: "Wenn eine Zeitung falsche Tatsachen über den Geschäftsführer von PixelCraft veröffentlicht, kann dieser eine Gegendarstellung verlangen.",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Ordnungswidrigkeitenverfahren",
+                explanation: "Verfahren bei Verstößen gegen Vorschriften, die mit Bußgeld geahndet werden (z.B. fehlende Anbieterkennung, Datenschutzverstöße) [1].",
+                example: "Wenn AllesDRUCK auf ihrer Website keine vollständige Anbieterkennung hat, kann ein Ordnungswidrigkeitenverfahren eingeleitet werden [1].",
+                categories: ["recht"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wettbewerbsrechtliche Abmahnung",
+                explanation: "Außergerichtliche Geltendmachung von Unterlassungsansprüchen bei Wettbewerbsverstößen mit Aufforderung zur Abgabe einer strafbewehrten Unterlassungserklärung [1].",
+                example: "Ein Konkurrent mahnt AllesDRUCK ab, weil diese irreführende Werbeaussagen über Lieferzeiten macht.",
+                categories: ["recht", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== IT & DIGITAL (30 Begriffe) ====================
+            {
+                term: "Responsive Design",
+                explanation: "Responsive Webdesign passt sich automatisch an verschiedene Bildschirmgrößen und Endgeräte an, um die beste Darstellung in Abhängigkeit vom Viewport zu liefern [7], [17].",
+                example: "Die OnlineFurniture-Website muss auf Desktop, Tablet und Smartphone optimal dargestellt werden, damit Kunden bequem von allen Geräten bestellen können.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Foreign Key (Fremdschlüssel)",
+                explanation: "Ein Fremdschlüssel stellt in relationalen Datenbanken eine Verbindung zwischen Tabellen her und sichert die referentielle Integrität durch Verweis auf den Primary Key einer anderen Tabelle.",
+                example: "In der Bestellungen-Tabelle verweist die KundenID (Foreign Key) auf die Kunden-Tabelle (Primary Key), um sicherzustellen, dass jede Bestellung einem existierenden Kunden zugeordnet ist.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Primary Key (Primärschlüssel)",
+                explanation: "Ein eindeutiger Identifikator für jeden Datensatz in einer Datenbanktabelle. Jeder Primary Key muss eindeutig sein und darf nicht NULL sein.",
+                example: "In der Kundentabelle der DataCraft Solutions AG ist die KundenID der Primary Key. Jede ID kommt nur einmal vor und identifiziert einen Kunden eindeutig.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "CMS (Content Management System)",
+                explanation: "Ein System zur einfachen Verwaltung und Pflege von Website-Inhalten ohne Programmierkenntnisse. Es trennt Inhalt, Struktur und Design [4], [6].",
+                example: "Handwerk & Herz nutzt ein CMS, um neue Möbelprodukte selbstständig in den Online-Shop einzupflegen, Preise zu aktualisieren und Produktbeschreibungen zu ändern.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Webserver",
+                explanation: "Ein Webserver stellt Webseiten zur Verfügung und ist das Bindeglied zwischen Backend und Frontend. Er verarbeitet Anfragen mehrerer Browser und liefert statische sowie dynamische Inhalte aus [3].",
+                example: "Der Webserver der VintageVibes GmbH empfängt Anfragen, ruft Produktdaten aus der Datenbank ab und sendet die fertige HTML-Seite an den Browser des Kunden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "API (Application Programming Interface)",
+                explanation: "Eine Schnittstelle, über die verschiedene Software-Komponenten oder Systeme Daten austauschen können. REST APIs liefern dynamische Daten ohne vollständiges Neuladen [6].",
+                example: "Die PixelCraft Studios nutzen eine API, um Kundendaten aus dem CRM-System automatisch in ihr Projektverwaltungs-Tool zu übertragen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Headless CMS",
+                explanation: "Ein CMS ohne integriertes Frontend. Verschiedene Frontends sind über REST-APIs mit dem Backend verbunden, wodurch Inhalte parallel an verschiedene Kanäle verteilt werden können [6].",
+                example: "FutureMedia Solutions nutzt ein Headless CMS, um Kursinhalte gleichzeitig auf ihrer Website, in der mobilen App und als Newsletter auszuspielen [6].",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "SQL (Structured Query Language)",
+                explanation: "Die strukturierte Datenbank-Abfragesprache und der Sprachstandard für relationale Datenbanken zum Zugriff und zur Manipulation von Daten [3].",
+                example: "Der Webserver nutzt SQL-Abfragen, um Produktinformationen aus der Datenbank abzurufen: SELECT * FROM Produkte WHERE Kategorie='Vintage'.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Barrierefreiheit (Accessibility)",
+                explanation: "Digitale Angebote müssen für Menschen mit Einschränkungen nutzbar sein. Dazu gehören korrekt verknüpfte Labels, Tastaturbedienbarkeit, ausreichende Kontraste und Screenreader-Unterstützung (WCAG) [8].",
+                example: "Das Formular der EduSmart Plattform muss vollständig per Tastatur bedienbar sein und klare Fehlermeldungen anzeigen, damit auch sehbehinderte Nutzer es ausfüllen können.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Dynamische Formulare",
+                explanation: "Formulare, deren Aufbau sich während der Nutzung basierend auf Nutzereingaben oder Bedingungen verändert. Felder werden automatisch ein- oder ausgeblendet [8].",
+                example: "Wenn ein Kunde bei OnlineFurniture 'Lieferung' wählt, erscheint automatisch ein Adressfeld. Wählt er 'Abholung', wird das Feld ausgeblendet.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "SEO (Search Engine Optimization)",
+                explanation: "Suchmaschinenoptimierung umfasst Maßnahmen zur Verbesserung der Sichtbarkeit einer Website in organischen Suchergebnissen durch Keywords, technische Optimierung und Content-Qualität [4], [6].",
+                example: "VintageVibes optimiert Produktbeschreibungen mit relevanten Keywords wie 'nachhaltige Vintage-Mode' und verbessert die Ladezeiten, um in Google-Suchergebnissen höher zu ranken.",
+                categories: ["it", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Backend",
+                explanation: "Der serverseitige Teil einer Anwendung, der für Datenverwaltung, Geschäftslogik und Datenbank-Kommunikation zuständig ist. Für Nutzer nicht direkt sichtbar [4].",
+                example: "Das Backend des Online-Shops verwaltet Kundendaten, Bestellungen und Lagerbestände und kommuniziert mit der Datenbank.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Frontend",
+                explanation: "Der clientseitige Teil einer Anwendung, mit dem der Nutzer direkt interagiert. Umfasst HTML, CSS und JavaScript für die Darstellung im Browser [6].",
+                example: "Das Frontend des Online-Shops zeigt dem Kunden Produktbilder, Beschreibungen und den Warenkorb an.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "HTML (HyperText Markup Language)",
+                explanation: "Die Standard-Auszeichnungssprache für die Strukturierung von Webseiten. Definiert Elemente wie Überschriften, Absätze, Links und Bilder [6].",
+                example: "Mit HTML strukturiert Creative Visions die Inhalte ihrer Website mit Tags wie <h1> für Überschriften und <p> für Textabsätze.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "CSS (Cascading Style Sheets)",
+                explanation: "Stylesheet-Sprache zur Gestaltung und visuellen Formatierung von HTML-Elementen. Regelt Farben, Schriftarten, Layout und Abstände [6].",
+                example: "Mit CSS definiert OnlineFurniture das Aussehen ihrer Website: Schriftfarbe, Hintergrund, Abstände zwischen Elementen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "JavaScript",
+                explanation: "Client-seitige Programmiersprache für interaktive Elemente auf Webseiten. Ermöglicht Animationen, Formularvalidierungen und dynamisches Nachladen von Inhalten [6].",
+                example: "JavaScript ermöglicht es, dass der Warenkorb bei OnlineFurniture aktualisiert wird, ohne die ganze Seite neu zu laden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "REST API",
+                explanation: "REpresentational State Transfer - ein Programmierparadigma für verteilte Systeme. Ermöglicht die Lieferung dynamischer Daten ohne vollständiges Neuladen der Seite [6].",
+                example: "Die EduSmart App nutzt eine REST API, um Lernfortschritte vom Server abzurufen, ohne die App neu zu starten.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Relationale Datenbank",
+                explanation: "Datenbanksystem, das Daten in Tabellen organisiert, die über Beziehungen (Relations) miteinander verknüpft sind. Redundanzvermeidung durch Normalisierung [3].",
+                example: "DataCraft nutzt eine relationale Datenbank, in der Kundendaten, Bestellungen und Produkte in separaten Tabellen gespeichert und über IDs verknüpft sind.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Normalisierung (Datenbank)",
+                explanation: "Prozess zur Strukturierung von Datenbanken, um Redundanzen zu minimieren und Datenintegrität zu maximieren. Daten werden auf mehrere Tabellen aufgeteilt [3].",
+                example: "Statt Kundenadressen in jeder Bestellung zu speichern, wird die Adresse nur in der Kunden-Tabelle gespeichert und über die KundenID verknüpft.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Media Queries",
+                explanation: "CSS-Technik zur Definition unterschiedlicher Styles für verschiedene Bildschirmgrößen und Gerätetypen. Grundlage für Responsive Design [7].",
+                example: "Media Queries sorgen dafür, dass die Navigation auf Smartphones als Hamburger-Menü erscheint, während sie auf dem Desktop horizontal angezeigt wird.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Hamburger-Menü",
+                explanation: "Platzsparendes Navigationsmenü für mobile Geräte, dargestellt durch drei horizontale Linien. Bei Klick öffnet sich die vollständige Navigation [8].",
+                example: "Auf der mobilen Version von VintageVibes wird die Navigation als Hamburger-Menü dargestellt, um Platz für Inhalte zu schaffen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Progressive Offenlegung",
+                explanation: "UI-Design-Prinzip, bei dem Informationen schrittweise präsentiert werden, um kognitive Überlastung zu vermeiden. Komplexe Inhalte werden in kleine, verständliche Einheiten aufgeteilt [7], [8].",
+                example: "Bei einem langen Registrierungsformular werden zunächst nur Basisinformationen abgefragt. Weitere Felder erscheinen erst bei Bedarf.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Validierung (Formular)",
+                explanation: "Prüfung von Formulareingaben auf Korrektheit und Vollständigkeit. Kann clientseitig (JavaScript) oder serverseitig erfolgen [8].",
+                example: "Bei der Eingabe einer E-Mail-Adresse prüft die Validierung, ob das Format korrekt ist (enthält @-Zeichen und Domain).",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Viewport",
+                explanation: "Der sichtbare Bereich einer Webseite im Browser-Fenster. Unterscheidet sich je nach Gerät (Desktop, Tablet, Smartphone) [7].",
+                example: "Der Viewport eines Smartphones ist deutlich kleiner als der eines Desktop-Monitors, daher muss das Design angepasst werden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Breakpoints",
+                explanation: "Definierte Bildschirmbreiten, ab denen das Layout einer Website umstrukturiert wird, um optimal auf verschiedene Geräte zu reagieren [7].",
+                example: "OnlineFurniture definiert Breakpoints bei 768px (Tablet) und 1024px (Desktop), um das Layout entsprechend anzupassen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "SSL/TLS-Verschlüsselung",
+                explanation: "Sicherheitsprotokoll zur verschlüsselten Übertragung von Daten zwischen Client und Server. Erkennbar am HTTPS in der URL.",
+                example: "Der Online-Shop von VintageVibes nutzt SSL-Verschlüsselung, damit Zahlungsdaten und persönliche Informationen sicher übertragen werden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Firewall",
+                explanation: "Netzwerksicherheitslösung, die ein Netzwerk vor unerwünschtem Datenverkehr schützt und unbefugte Zugriffe blockiert [6].",
+                example: "Die Firewall von DataCraft filtert eingehenden Datenverkehr und blockiert verdächtige Verbindungsversuche zum Webserver.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Rollen- und Rechtesystem",
+                explanation: "System zur Definition von Zugriffsrechten für verschiedene Nutzergruppen. Bestimmt, wer welche Daten sehen oder bearbeiten darf [6].",
+                example: "Im CMS von OnlineFurniture haben Redakteure nur Schreibrechte für Produktbeschreibungen, Administratoren können aber auch Preise ändern.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Datenbankschema",
+                explanation: "Die logische Struktur einer Datenbank, die Tabellen, Spalten, Datentypen und Beziehungen beschreibt [6].",
+                example: "Das Datenbankschema von DataCraft definiert, dass die Kunden-Tabelle die Spalten KundenID, Name, Email und Registrierungsdatum enthält.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Redundanz (Datenbank)",
+                explanation: "Mehrfache Speicherung derselben Information an verschiedenen Stellen, was zu Inkonsistenzen führen kann. Sollte vermieden werden [3], [17].",
+                example: "Wenn die Kundenadresse sowohl in der Kunden-Tabelle als auch in jeder Bestellung gespeichert wird, entsteht Redundanz und Aktualisierungsprobleme.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== MARKETING (25 Begriffe) ====================
+            {
+                term: "BCG-Matrix",
+                explanation: "Die Boston Consulting Group Matrix kategorisiert Produkte/Geschäftseinheiten in vier Typen basierend auf Marktwachstum und relativem Marktanteil: Stars, Cash Cows, Question Marks und Poor Dogs [16].",
+                example: "Der Premium-Flyer A5 der EcoPrint Solutions ist eine Cash Cow: geringes Marktwachstum, aber hoher Deckungsbeitrag. Die Gewinne werden abgeschöpft, um neue digitale Services (Question Marks) zu finanzieren [1].",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Question Marks (Fragezeichen)",
+                explanation: "Produkte mit geringem relativem Marktanteil in einem wachsenden Markt. Sie erfordern hohe Investitionen und können zu Stars oder Poor Dogs werden [16].",
+                example: "Die KI-gestützten Bildungstools von GlobalTech Ventures sind Question Marks. Das Unternehmen muss entscheiden, ob es stark investiert oder sich zurückzieht.",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Cash Cows (Melkkühe)",
+                explanation: "Produkte mit hohem relativem Marktanteil bei geringem Marktwachstum. Sie generieren stabile Gewinne bei geringen Investitionen (Sättigungsphase des PLZ) [16].",
+                example: "Die traditionellen Druckprodukte der AllesDRUCK GmbH sind Cash Cows. Sie finanzieren die Entwicklung neuer digitaler Geschäftsfelder.",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Stars",
+                explanation: "Produkte mit hohem relativem Marktanteil in einem wachsenden Markt. Sie erfordern weiterhin Investitionen, um die Position zu halten [16].",
+                example: "Ein erfolgreiches neues digitales Produkt mit hohem Marktanteil in einem wachsenden Segment ist ein Star und muss weiter gefördert werden.",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Poor Dogs (Arme Hunde)",
+                explanation: "Produkte mit geringem relativem Marktanteil in einem stagnierenden oder schrumpfenden Markt. Sollten eliminiert oder desinvestiert werden [16].",
+                example: "Ein veraltetes Printprodukt mit geringem Absatz in einem schrumpfenden Markt ist ein Poor Dog und sollte aus dem Sortiment genommen werden.",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Marktsegmentierung",
+                explanation: "Aufteilung des Gesamtmarktes in kleinere, homogene Kundengruppen (Segmente) anhand von Kriterien wie Demografie, Psychografie oder Verhalten, um Zielgruppen gezielt anzusprechen [16].",
+                example: "FutureMedia segmentiert den Markt für Online-Kurse nach Alter (25-50 Jahre), Einkommen (>35.000€) und Bildungsstand, um Premium-Angebote passgenau zu vermarkten.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Influencer Marketing",
+                explanation: "Marketingstrategie, bei der Influencer mit großer Reichweite und Vertrauen in ihrer Community Produkte authentisch vorstellen und bewerben.",
+                example: "SmartFit Solutions kooperiert mit Fitness-Influencern, die die App testen und mit Rabatt-Codes ihre Community zur Nutzung motivieren.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "SEM (Suchmaschinenmarketing)",
+                explanation: "Kombination aus SEO (organische Suche) und SEA (bezahlte Anzeigen), um die Sichtbarkeit in Suchmaschinen zu erhöhen [4].",
+                example: "VintageVibes schaltet Google Ads für 'nachhaltige Vintage-Kleidung' (SEA) und optimiert gleichzeitig die Website-Inhalte (SEO).",
+                categories: ["marketing", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "SEA (Suchmaschinenwerbung)",
+                explanation: "Bezahlte Anzeigen in Suchmaschinen, die über den organischen Suchergebnissen erscheinen. Abrechnung oft nach Pay-per-Click (PPC) [4].",
+                example: "SmartFit schaltet Google Ads, die erscheinen, wenn Nutzer nach 'Fitness-App' suchen. Pro Klick zahlt SmartFit einen festgelegten Betrag.",
+                categories: ["marketing", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Crossmedia-Konzept",
+                explanation: "Verknüpfung verschiedener Medienkanäle (Print, Digital) mit einheitlicher Botschaft und kohärentem Markenerlebnis, um die Stärken jedes Mediums optimal zu nutzen [17].",
+                example: "EcoPrint platziert QR-Codes auf Printprospekten, die direkt zum Online-Konfigurator führen und zusätzliche Produktvideos anzeigen.",
+                categories: ["marketing", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Customer Journey",
+                explanation: "Die Reise des Kunden von der ersten Wahrnehmung eines Produkts bis zum Kauf und darüber hinaus. Umfasst Phasen wie Awareness, Consideration, Decision, Deployment [27].",
+                example: "Ein Kunde entdeckt SmartFit über Instagram (Awareness), liest Bewertungen (Consideration), lädt die App herunter (Decision) und empfiehlt sie weiter (Loyalty) [27].",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Awareness (Bekanntheit)",
+                explanation: "Erste Phase der Customer Journey, in der potenzielle Kunden auf ein Produkt oder eine Marke aufmerksam werden [27].",
+                example: "Durch Instagram-Werbung wird ein Nutzer erstmals auf die SmartFit App aufmerksam.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Consideration (Erwägung)",
+                explanation: "Phase der Customer Journey, in der Kunden verschiedene Optionen vergleichen und Informationen sammeln [27].",
+                example: "Der potenzielle Kunde liest Bewertungen, vergleicht SmartFit mit anderen Fitness-Apps und prüft die Funktionen.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Decision (Entscheidung)",
+                explanation: "Phase der Customer Journey, in der der Kunde sich für ein Produkt entscheidet und den Kauf tätigt [27].",
+                example: "Nach dem Vergleich entscheidet sich der Kunde für SmartFit und lädt die App herunter.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Deployment/Retention (Bindung)",
+                explanation: "Phase der Customer Journey, in der der Kunde das Produkt nutzt und idealerweise langfristig gebunden wird [27].",
+                example: "Der Kunde nutzt SmartFit regelmäßig, ist zufrieden mit den Trainingsplänen und verlängert sein Abonnement [27].",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Loyalty (Loyalität)",
+                explanation: "Höchste Phase der Kundenbindung, in der zufriedene Kunden zu Markenbotschaftern werden und das Produkt weiterempfehlen [27].",
+                example: "Der zufriedene SmartFit-Nutzer empfiehlt die App seinen Freunden und schreibt positive Bewertungen im App Store.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Demografische Segmentierung",
+                explanation: "Marktsegmentierung anhand von Merkmalen wie Alter, Geschlecht, Einkommen, Bildung und Beruf [16].",
+                example: "FutureMedia richtet sich an 25-50-Jährige mit höherem Einkommen für Premium-Online-Kurse.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Psychografische Segmentierung",
+                explanation: "Marktsegmentierung anhand von Persönlichkeitsmerkmalen, Werten, Einstellungen und Lebensstilen [16].",
+                example: "LOHAS (Lifestyle of Health and Sustainability) sind eine psychografische Zielgruppe für nachhaltige Produkte [16].",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Verhaltensbasierte Segmentierung",
+                explanation: "Marktsegmentierung anhand von Kaufverhalten, Nutzungsintensität, Markentreue und Preissensibilität.",
+                example: "Vielkäufer erhalten ein Treueprogramm, während Gelegenheitskäufer mit Rabattaktionen angesprochen werden.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Affiliate Marketing",
+                explanation: "Performance-basierte Marketingstrategie, bei der Partner (Affiliates) Produkte bewerben und bei erfolgreicher Vermittlung eine Provision erhalten [6].",
+                example: "Fitness-Blogs verlinken zur SmartFit App. Für jeden Download über ihren Link erhalten sie eine Provision.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Social Media Marketing",
+                explanation: "Nutzung sozialer Netzwerke zur Markenkommunikation, Kundenbindung und Reichweitensteigerung [4].",
+                example: "VintageVibes postet regelmäßig auf Instagram, um neue Kollektionen zu präsentieren und mit der Community zu interagieren.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Content Marketing",
+                explanation: "Erstellung und Verbreitung relevanter, wertvoller Inhalte, um eine Zielgruppe anzuziehen und zu binden.",
+                example: "FutureMedia erstellt Blog-Artikel und Whitepapers zu Lernmethoden, um Expertise zu demonstrieren und Leads zu generieren.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "E-Mail-Marketing",
+                explanation: "Direkte Kommunikation mit Kunden und Interessenten per E-Mail, z.B. durch Newsletter, Angebote oder personalisierte Nachrichten.",
+                example: "OnlineFurniture versendet wöchentlich einen Newsletter mit neuen Produkten und exklusiven Rabatten an Abonnenten.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Conversion Rate",
+                explanation: "Verhältnis von Besuchern zu gewünschten Aktionen (z.B. Käufen, Anmeldungen). Wichtige Kennzahl zur Erfolgsmessung.",
+                example: "Wenn von 1000 Website-Besuchern 50 einen Kauf tätigen, beträgt die Conversion Rate 5%.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Landing Page",
+                explanation: "Speziell gestaltete Webseite, auf die Nutzer durch Marketing-Kampagnen geleitet werden, um eine bestimmte Aktion auszulösen.",
+                example: "SmartFit erstellt eine Landing Page für eine neue Fitness-Challenge, auf der sich Nutzer direkt anmelden können.",
+                categories: ["marketing", "it"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== BWL & KALKULATION (20 Begriffe) ====================
+            {
+                term: "Mehrstufiger Deckungsbeitrag",
+                explanation: "Eine Kalkulation, die Deckungsbeiträge auf mehreren Stufen ermittelt: DB I (Umsatz minus variable Kosten), DB II (DB I minus Produktfixkosten), DB III (DB II minus Bereichsfixkosten) bis zum Betriebsergebnis [1].",
+                example: "Bei der Digital Creative GmbH: Werbemittel E hat DB II von -200€. Trotz positivem DB I (500€) deckt es die Produktfixkosten (700€) nicht und sollte kritisch geprüft werden [1].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Deckungsbeitrag I",
+                explanation: "Die Differenz zwischen Umsatzerlösen und variablen Kosten. Er zeigt, wie viel ein Produkt zur Deckung der Fixkosten beiträgt [1].",
+                example: "Produkt A: Umsatz 18.000€ - variable Kosten 6.000€ = DB I von 12.000€ [1].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fixkosten",
+                explanation: "Kosten, die unabhängig von der Produktionsmenge anfallen (z.B. Miete, Gehälter). Werden unterteilt in Produktfixkosten, Bereichsfixkosten und Unternehmensfixkosten [1].",
+                example: "Die Miete für die Druckerei der AllesDRUCK GmbH beträgt monatlich 5.000€, unabhängig davon, wie viele Aufträge produziert werden.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Variable Kosten",
+                explanation: "Kosten, die sich proportional zur Produktionsmenge verändern (z.B. Materialkosten, Druckfarben) [1].",
+                example: "Für jeden gedruckten Flyer fallen 0,05€ Papierkosten an. Bei 10.000 Flyern: 500€ variable Kosten.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Produktfixkosten",
+                explanation: "Fixkosten, die einem bestimmten Produkt direkt zugeordnet werden können (z.B. Miete für spezielle Maschine, Entwicklungskosten) [1].",
+                example: "Die jährlichen Wartungskosten einer speziellen Druckmaschine nur für Visitenkarten sind Produktfixkosten.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Bereichsfixkosten",
+                explanation: "Fixkosten, die einem Unternehmensbereich zugeordnet werden können, aber nicht einzelnen Produkten (z.B. Abteilungsleiter-Gehalt) [1].",
+                example: "Das Gehalt des Leiters der Druckabteilung ist eine Bereichsfixkost, die nicht einzelnen Druckaufträgen zugerechnet werden kann [1].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Unternehmensfixkosten",
+                explanation: "Fixkosten, die dem gesamten Unternehmen zugeordnet werden und nicht spezifischen Bereichen oder Produkten (z.B. Geschäftsführergehalt, Miete Hauptgebäude) [1].",
+                example: "Die Gehälter der Geschäftsführung und die Miete für das Verwaltungsgebäude sind Unternehmensfixkosten [1].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Betriebsergebnis",
+                explanation: "Das Ergebnis nach Abzug aller Kosten vom Umsatz. Zeigt den operativen Gewinn oder Verlust des Unternehmens [1].",
+                example: "Nach Abzug aller variablen Kosten, Produktfixkosten, Bereichsfixkosten und Unternehmensfixkosten ergibt sich ein Betriebsergebnis von 2.610€ [1].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Amortisationsrechnung",
+                explanation: "Eine statische Investitionsrechnung, die ermittelt, innerhalb welcher Zeit eine Investition ihre eigenen Kosten zurückerwirtschaftet. Sie berücksichtigt nicht die Sinnhaftigkeit der Investition [2].",
+                example: "Eine neue Druckmaschine kostet 100.000€ und spart jährlich 25.000€. Amortisationszeit: 4 Jahre.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Statische Investitionsrechnung",
+                explanation: "Verfahren zur Beurteilung von Investitionen, die nur eine Periode betrachten und keine Zeitwertunterschiede berücksichtigen (z.B. Amortisationsrechnung) [2].",
+                example: "Die statische Investitionsrechnung ermittelt, wie lange es dauert, bis die Anschaffungskosten einer Maschine durch Einsparungen gedeckt sind.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Relativer Marktanteil",
+                explanation: "Verhältnis des eigenen Marktanteils zum Marktanteil des stärksten Konkurrenten. Wichtige Kennzahl der BCG-Matrix [16].",
+                example: "Wenn AllesDRUCK 20% Marktanteil hat und der Hauptkonkurrent 40%, beträgt der relative Marktanteil 0,5 (20%/40%).",
+                categories: ["bwl", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Marktwachstum",
+                explanation: "Prozentuale Veränderung der Marktgröße über einen bestimmten Zeitraum. Wichtige Kennzahl zur Beurteilung der Attraktivität eines Marktes [16].",
+                example: "Der Markt für Online-Kurse wächst um 15% jährlich, was ein hohes Marktwachstum darstellt.",
+                categories: ["bwl", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Cashflow",
+                explanation: "Der Geldfluss, der durch ein Produkt oder Unternehmen generiert wird. Cash Cows zeichnen sich durch hohen Cashflow aus.",
+                example: "Die traditionellen Printprodukte von AllesDRUCK generieren einen stabilen, hohen Cashflow, der neue Investitionen finanziert.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Produktlebenszyklus (PLZ)",
+                explanation: "Modell, das die Phasen eines Produkts von der Einführung über Wachstum und Reife bis zum Niedergang beschreibt [16].",
+                example: "Der Premium-Flyer befindet sich in der Reifephase (Cash Cow), während digitale Services in der Einführungsphase (Question Mark) sind.",
+                categories: ["bwl", "marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Desinvestitionsstrategie",
+                explanation: "Strategie zum Rückzug aus einem Geschäftsfeld durch Verkauf, Liquidation oder schrittweisen Abbau [16].",
+                example: "Poor Dogs sollten desinvestiert werden, wenn sie keinen Beitrag mehr zum Unternehmenserfolg leisten.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Investitionsstrategie",
+                explanation: "Strategie zur gezielten Förderung eines Geschäftsfelds durch hohe Investitionen, um Marktanteile zu gewinnen [16].",
+                example: "Question Marks erfordern eine Investitionsstrategie, um sie zu Stars zu entwickeln.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Abschöpfungsstrategie",
+                explanation: "Strategie zur Gewinnmaximierung bei Cash Cows durch Minimierung von Investitionen bei gleichzeitiger Aufrechterhaltung des Marktanteils [16].",
+                example: "AllesDRUCK schöpft Gewinne aus traditionellen Druckprodukten ab, ohne weiter in deren Weiterentwicklung zu investieren.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kostenrechnung",
+                explanation: "Instrument zur Erfassung, Zuordnung und Analyse von Kosten im Unternehmen. Basis für Preiskalkulation und Entscheidungsfindung [1].",
+                example: "Die Kostenrechnung von AllesDRUCK ermittelt, welche Kosten für jeden Druckauftrag anfallen und wie profitabel er ist.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Plankostenrechnung",
+                explanation: "Verfahren, bei dem Kosten im Voraus geplant und später mit Ist-Kosten verglichen werden, um Abweichungen zu analysieren.",
+                example: "AllesDRUCK plant für einen Auftrag Kosten von 5.000€. Die tatsächlichen Kosten betragen 5.500€. Die Abweichung wird analysiert.",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kalkulation",
+                explanation: "Ermittlung der Kosten und Preise für Produkte oder Dienstleistungen. Umfasst alle direkten und indirekten Kosten [22].",
+                example: "Bei der Kalkulation eines Webservice-Projekts werden Personalkosten, Serverkosten, Lizenzen und Gemeinkosten berücksichtigt [22].",
+                categories: ["bwl"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== QUALITÄTSMANAGEMENT (20 Begriffe) ====================
+            {
+                term: "Kaizen (KVP)",
+                explanation: "Kontinuierlicher Verbesserungsprozess mit kleinen, inkrementellen Schritten unter Einbeziehung aller Mitarbeiter. Ziel: ständige Optimierung ohne festes Endziel [21].",
+                example: "Bei der Optimierung der KI-Anwendung von DataCraft werden fortlaufend kleine Verbesserungen an Algorithmen und Nutzeroberfläche vorgenommen, basierend auf Mitarbeiter-Feedback.",
+                categories: ["qm", "personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "BPR (Business Process Reengineering)",
+                explanation: "Radikaler, top-down gesteuerter Ansatz zur kompletten Neugestaltung von Geschäftsprozessen mit klarem Ziel der Geschäftsführung [21].",
+                example: "PixelCraft automatisiert den gesamten Bestellprozess: Statt manueller Dateneingabe erfolgt alles automatisch vom Kundenauftrag bis zum Versand.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "TCT (Total Cycle Time)",
+                explanation: "Ansatz zur Reduzierung der Prozesszeiten durch systematisches Aufdecken und Überwinden von Barrieren (Prozess-, Sach-, Kulturbarrieren) [21].",
+                example: "PixelCraft identifiziert Wartezeiten bei der Datenmigration (Prozessbarriere) und automatisiert diese via API-Schnittstellen, um die Gesamtprozesszeit zu verkürzen.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Qualitätsmanagement (QM)",
+                explanation: "Systematischer Ansatz zur Sicherstellung und Verbesserung der Qualität von Produkten, Dienstleistungen und Prozessen, um Kundenanforderungen zu erfüllen [20].",
+                example: "DataCraft implementiert ein QM-System, das die Datenqualität durch Validierungsregeln, Tests und kontinuierliche Überwachung sicherstellt.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Prozessbarriere",
+                explanation: "Hindernisse im Ablauf, die zu Stillstand und Wartezeiten führen (z.B. manuelle Dateneingabe, fehlende Schnittstellen) [21].",
+                example: "Die manuelle Überführung von E-Mail-Daten in ein neues System ist eine Prozessbarriere, die den Workflow verzögert.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Sachbarriere",
+                explanation: "Hindernisse durch fehlende oder ungeeignete Ressourcen wie Hard- oder Software, Dokumentation oder technische Infrastruktur [21].",
+                example: "Fehlende API-Schnittstellen zum automatisierten Datenaustausch sind Sachbarrieren.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kulturbarriere",
+                explanation: "Hindernisse durch festgefahrene Denkstrukturen, Widerstände gegen Veränderung oder mangelnde Innovationsbereitschaft [21].",
+                example: "Mitarbeiter, die an alten Prozessen festhalten und neue digitale Tools ablehnen, schaffen Kulturbarrieren.",
+                categories: ["qm", "personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Usability-Test",
+                explanation: "Test der Benutzerfreundlichkeit eines Produkts oder Systems mit echten Nutzern zur Identifikation von Problemen [8].",
+                example: "PixelCraft führt Usability-Tests durch, um zu prüfen, ob Nutzer das neue Kundenportal intuitiv bedienen können.",
+                categories: ["qm", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Technischer Test",
+                explanation: "Test der technischen Funktionalität, um sicherzustellen, dass alle Funktionen korrekt arbeiten und keine Fehler im Code vorhanden sind [8].",
+                example: "Vor dem Launch wird geprüft, ob alle Links funktionieren, Formulare korrekt validieren und die Datenbankanbindung stabil ist.",
+                categories: ["qm", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fachliche Prüfung",
+                explanation: "Überprüfung der Geschäftslogik und Regeln, um logische Fehler frühzeitig zu erkennen [8].",
+                example: "Bei dynamischen Formularen wird geprüft, ob die Regeln korrekt sind: Erscheinen die richtigen Felder bei den richtigen Eingaben?",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "DMAIC",
+                explanation: "Six Sigma Prozessverbesserungszyklus: Define, Measure, Analyze, Improve, Control. Strukturierte Methode zur Qualitätsverbesserung [2].",
+                example: "DataCraft nutzt DMAIC, um die Fehlerrate bei der Datenverarbeitung systematisch zu reduzieren.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Qualitätsziele",
+                explanation: "Vordefinierte Vorgaben zu Beginn eines Projekts, die die erwartete Qualität definieren [4].",
+                example: "Für ein Webprojekt wird definiert: Ladezeit unter 2 Sekunden, keine kritischen Fehler, 95% positive Nutzerbewertungen.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kontinuierliche Verbesserung",
+                explanation: "Grundprinzip des Qualitätsmanagements, Prozesse und Produkte ständig weiterzuentwickeln [4], [21].",
+                example: "Nach jedem Projekt sammelt Creative Visions Feedback und optimiert Workflows für das nächste Projekt.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Prozessoptimierung",
+                explanation: "Verbesserung von Arbeitsabläufen zur Steigerung von Effizienz, Qualität und Geschwindigkeit.",
+                example: "Durch Automatisierung der Datenmigration reduziert PixelCraft die Durchlaufzeit von 2 Stunden auf 15 Minuten.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Risikobewertung",
+                explanation: "Systematische Identifikation und Bewertung potenzieller Risiken in Prozessen oder Projekten [2].",
+                example: "Vor dem Launch eines neuen Systems bewertet DataCraft Risiken wie Datenverlust, Ausfallzeiten oder Sicherheitslücken.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Datendokumentation",
+                explanation: "Schriftliche Erfassung von Prozessen, Entscheidungen und Ergebnissen zur Nachvollziehbarkeit und Wissensbewahrung [20].",
+                example: "Alle Änderungen am Datenbankschema werden dokumentiert, damit zukünftige Entwickler die Struktur verstehen.",
+                categories: ["qm", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Standardisierung",
+                explanation: "Vereinheitlichung von Prozessen und Vorgaben zur Sicherstellung konsistenter Qualität.",
+                example: "AllesDRUCK standardisiert die Druckprozesse, damit jeder Auftrag dieselbe hohe Qualität aufweist.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fehlermanagement",
+                explanation: "Systematischer Umgang mit Fehlern: Erkennung, Dokumentation, Behebung und Vermeidung zukünftiger Fehler.",
+                example: "Wenn ein Fehler im Webshop auftritt, wird er in einem Ticket-System erfasst, priorisiert, behoben und getestet.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Qualitätssicherung (QS)",
+                explanation: "Alle geplanten und systematischen Tätigkeiten, die notwendig sind, um ausreichendes Vertrauen zu schaffen, dass ein Produkt die Qualitätsanforderungen erfüllt [4].",
+                example: "Die QS-Abteilung testet jede neue Website-Funktion vor dem Release auf Fehler und Benutzerfreundlichkeit.",
+                categories: ["qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Evaluation",
+                explanation: "Bewertung und Analyse von Maßnahmen, Prozessen oder Projekten nach deren Abschluss zur Identifikation von Verbesserungspotenzialen [9].",
+                example: "Nach Abschluss einer Schulungsmaßnahme wird evaluiert, ob die Lernziele erreicht wurden und die Mitarbeiter die Inhalte anwenden können [9].",
+                categories: ["qm", "personal"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== PERSONAL (20 Begriffe) ====================
+            {
+                term: "Personalentwicklung",
+                explanation: "Systematische Förderung von Mitarbeiterkompetenzen durch Schulungen, Training und Weiterbildung zur Erreichung von Unternehmens- und Mitarbeiterzielen [9], [22].",
+                example: "FutureMedia schult Mitarbeiter in Zeitmanagement und Lernpsychologie, um die Effizienz in der Kursentwicklung zu steigern und Überlastung zu reduzieren.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Widerstand gegen Veränderung",
+                explanation: "Personenbezogene (Angst vor Arbeitsplatzverlust, Überforderung) oder strukturelle Ursachen, die Mitarbeiter davon abhalten, Veränderungen zu akzeptieren [5], [21].",
+                example: "Ältere Mitarbeiter bei Creative Visions haben Versagensängste beim Erlernen des neuen digitalen Projekttools und zeigen Widerstand gegen die Einführung.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wissensidentifikation",
+                explanation: "Baustein des Wissensmanagements: Schaffung von Transparenz über internes und externes Wissensumfeld (Daten, Informationen, Fähigkeiten), um Mitarbeitende bei Suchaktivitäten zu unterstützen [1].",
+                example: "Digital Creative analysiert, welche AR-Kompetenzen intern vorhanden sind und welches externe Know-how für die neue Kampagne benötigt wird.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Personalbedarfsplanung",
+                explanation: "Planung des benötigten Personals in drei Zeiträumen: kurzfristig (0,5-1 Jahr), mittelfristig (1-3 Jahre), langfristig (über 3 Jahre) zur Sicherung der Unternehmensziele [26], [10].",
+                example: "AllesDRUCK plant kurzfristig Überstunden für aktuelle Aufträge, mittelfristig Weiterbildungen für neue Technologien und langfristig Ausbildungsplätze für zukünftigen Bedarf [26].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Personalbeurteilung",
+                explanation: "Systematische Bewertung von Mitarbeiterleistungen anhand definierter Kriterien (Effizienz, Qualität, persönlicher Einsatz) mittels gebundener oder freier Beurteilungssysteme [11].",
+                example: "Creative Visions nutzt ein Einstufungsverfahren mit Skalen von 1-5 für Kriterien wie Teamfähigkeit, Fachkompetenz und Eigeninitiative [11].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wissenserwerb",
+                explanation: "Baustein des Wissensmanagements: Rekrutierung von Experten oder Akquisition von Know-how, das intern nicht entwickelt werden kann [1].",
+                example: "AllesDRUCK stellt einen erfahrenen Digitaldruck-Spezialisten ein, statt diese Expertise intern aufzubauen [1].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wissensverteilung",
+                explanation: "Baustein des Wissensmanagements: Gezieltes Verteilen von Wissen an die richtigen Personen durch Workshops, Mentorenprinzip oder Newsletter [1].",
+                example: "Erfahrene Mitarbeiter schulen neue Kollegen in wöchentlichen Workshops, um ihr Know-how weiterzugeben [1].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wissensnutzung",
+                explanation: "Produktiver Einsatz organisationalen Wissens in Arbeitsabläufen und Entscheidungen [1].",
+                example: "Das dokumentierte Wissen über erfolgreiche Projektumsetzungen wird für neue Aufträge genutzt.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Wissensziele",
+                explanation: "Geben dem Wissensmanagement eine Richtung: normativ (Unternehmenskultur), strategisch (zukünftiger Kompetenzbedarf), operativ (konkrete Umsetzung) [1].",
+                example: "Strategisches Wissensziel: Bis 2026 sollen alle Mitarbeiter Grundkenntnisse in KI-Tools haben.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Qualifizierungsbedarf",
+                explanation: "Ermittlung der Lücke zwischen vorhandenen und benötigten Kompetenzen der Mitarbeiter [9].",
+                example: "Die Analyse zeigt, dass Mitarbeiter Schulungsbedarf in der Bedienung neuer Software haben [9].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Gebundenes Beurteilungssystem",
+                explanation: "Standardisierte Beurteilungsbögen mit vorgegebenen Kriterien und Skalierungsstufen. Ermöglicht Vergleichbarkeit [11].",
+                example: "AllesDRUCK nutzt einen standardisierten Bogen, auf dem Mitarbeiter in Kategorien wie Zuverlässigkeit von 1-5 bewertet werden [11].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Freies Beurteilungssystem",
+                explanation: "Textbasierte, individuelle Beurteilung ohne vorgegebene Kriterien. Ermöglicht detaillierte, persönliche Einschätzungen.",
+                example: "Die Führungskraft schreibt eine ausführliche Bewertung über die Stärken und Entwicklungspotenziale des Mitarbeiters.",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Ersatzbedarf",
+                explanation: "Personalbedarf durch ausscheidende Mitarbeiter (Pensionierung, Kündigung) [26].",
+                example: "Ein erfahrener Mitarbeiter geht in Rente. AllesDRUCK muss Ersatz finden [26].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Neubedarf",
+                explanation: "Personalbedarf, der über den derzeitigen Personalbestand hinausgeht, z.B. durch Expansion [26].",
+                example: "Durch neue Geschäftsfelder benötigt AllesDRUCK 5 zusätzliche Mitarbeiter [26].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Reservebedarf",
+                explanation: "Für Notsituationen bereitgestelltes Personal (Urlaub, Krankheit, Auftragsspitzen) [26].",
+                example: "AllesDRUCK hält 2 zusätzliche Mitarbeiter bereit, um Krankheitsausfälle zu kompensieren [26].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Freistellungsbedarf",
+                explanation: "Personalbedarf, bei dem Personal abgebaut werden muss [26].",
+                example: "Durch Automatisierung werden bestimmte Tätigkeiten überflüssig, Personal muss abgebaut werden [26].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Zeitarbeit",
+                explanation: "Kurzfristige Einbindung von Personal über Arbeitnehmerüberlassungsunternehmen [5].",
+                example: "AllesDRUCK nutzt Zeitarbeitskräfte für Auftragsspitzen in der Weihnachtszeit [5].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fremdfertigung/Outsourcing",
+                explanation: "Auslagerung von Aufgaben an externe Dienstleister [5].",
+                example: "Statt eigenes Personal einzustellen, lässt AllesDRUCK bestimmte Druckaufträge von Partnern fertigen [5].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kommunikation (Führungsmittel)",
+                explanation: "Direktes Führungsmittel durch Mitarbeitergespräche: Zielgespräche, Teambesprechungen, Feedback, Beurteilungsgespräche [11].",
+                example: "Die Führungskraft führt regelmäßige Zielgespräche mit Mitarbeitern, um Erwartungen zu klären und Feedback zu geben [11].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Schlüsselqualifikationen (Soft Skills)",
+                explanation: "Überfachliche Kompetenzen wie Zuverlässigkeit, Leistungsbereitschaft, Ehrlichkeit, Eigeninitiative [11].",
+                example: "Bei der Beurteilung wird neben Fachkenntnissen auch die Zuverlässigkeit und Teamfähigkeit des Mitarbeiters bewertet [11].",
+                categories: ["personal"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== PRINT & PRODUKTION (20 Begriffe) ====================
+            {
+                term: "Veredelung",
+                explanation: "Weiterverarbeitungsschritte über den reinen Druck hinaus wie Heißfolie, Prägung, spezielle Lacke oder Ausstanzungen zur Aufwertung von Printprodukten [1].",
+                example: "Der Premium-Flyer von EcoPrint erhält eine Heißfolienprägung und einen Duftlack, um die Aufmerksamkeit zu steigern und ein haptisches Erlebnis zu schaffen.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Druckfarbe",
+                explanation: "Besteht aus Farbmittel (Pigmente), Bindemittel und Additiven. Eigenschaften umfassen Viskosität, Fließverhalten und Trocknungsverhalten [15].",
+                example: "Für den Offsetdruck verwendet AllesDRUCK pastöse Druckfarben mit definierter Viskosität, die durch oxidative Trocknung aushärten [15].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Papierklassen",
+                explanation: "Kategorisierung nach Stoffzusammensetzung: holzfrei, holzhaltig, Recycling, hadernhaltig. Nach Oberfläche: Naturpapier (maschinenglatt, satiniert) oder gestrichenes Papier [15].",
+                example: "AllesDRUCK verwendet für Hochglanzbroschüren gestrichenes, holzfreies Papier (115 g/m²) und für Zeitungen holzhaltiges, ungestrichenes Papier [15].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Color Management",
+                explanation: "System zur Sicherstellung konsistenter Farbdarstellung über verschiedene Geräte und Medien hinweg durch Farbprofile und Kalibrierung [14].",
+                example: "AllesDRUCK kalibriert Monitore und Drucker regelmäßig und nutzt ICC-Profile, damit die Farben am Bildschirm und im Druck identisch aussehen [14].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Heißfolie",
+                explanation: "Veredelungsverfahren, bei dem metallische oder farbige Folie unter Hitze und Druck auf das Druckprodukt übertragen wird.",
+                example: "Visitenkarten erhalten durch Heißfolienprägung einen edlen, metallischen Glanz auf dem Logo.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Prägung",
+                explanation: "Veredelungsverfahren zur Erzeugung von erhöhten (Reliefprägung) oder vertieften (Blindprägung) Strukturen im Material.",
+                example: "Eine Einladungskarte erhält eine Blindprägung, die das Logo fühlbar macht, ohne zusätzliche Farbe.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Lackierung",
+                explanation: "Auftragen von Schutz- oder Effektlacken auf Druckprodukte. Arten: Dispersionslack, UV-Lack, Duftlack, Strukturlack.",
+                example: "Eine Broschüre wird mit UV-Lack veredelt, um eine glänzende, kratzfeste Oberfläche zu erhalten.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Ausstanzung",
+                explanation: "Weiterverarbeitungsschritt, bei dem Druckprodukte in spezielle Formen geschnitten werden.",
+                example: "Flyer werden in eine besondere Form ausgestanzt, um die Aufmerksamkeit zu erhöhen.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Falzung",
+                explanation: "Knicken von Papier entlang definierter Linien, z.B. für Flyer, Broschüren oder Faltschachteln.",
+                example: "Ein DIN-A4-Flyer wird auf DIN-A5 gefalzt, um im Briefumschlag verschickt zu werden.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Offsetdruck",
+                explanation: "Indirektes Flachdruckverfahren mit hoher Qualität für mittlere bis große Auflagen. Druckfarbe wird von der Druckplatte auf ein Gummituch und dann auf Papier übertragen.",
+                example: "AllesDRUCK produziert Broschüren im Offsetdruck für hohe Qualität und wirtschaftliche Produktion ab 500 Exemplaren.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Digitaldruck",
+                explanation: "Direktes Druckverfahren ohne feste Druckform. Ideal für kleine Auflagen und personalisierte Produkte [15].",
+                example: "Personalisierte Einladungskarten mit individuellen Namen werden im Digitaldruck produziert.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Tonwertzunahme",
+                explanation: "Vergrößerung der Rasterpunkte im Druckprozess, die zu dunkleren Farbtönen führt. Muss im Druckprozess kompensiert werden [15].",
+                example: "Ein 50%-Rasterpunkt wird im Druck zu 65%, was bei der Druckvorstufe berücksichtigt werden muss [15].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "ICC-Profil",
+                explanation: "Standardisiertes Farbprofil zur Beschreibung der Farbeigenschaften von Geräten (Monitor, Drucker, Scanner) [14].",
+                example: "Der Monitor nutzt ein ICC-Profil, damit Farben korrekt dargestellt werden und dem Druckergebnis entsprechen.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kalibrierung",
+                explanation: "Anpassung von Geräten (Monitor, Drucker) an definierte Standards zur Sicherstellung korrekter Farbwiedergabe [14].",
+                example: "AllesDRUCK kalibriert monatlich alle Monitore, damit Designer Farben korrekt beurteilen können [14].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fogra Medienkeil",
+                explanation: "Standardisiertes Prüfmittel zur Überprüfung der Druckqualität durch spektrale Messung [14].",
+                example: "Mit dem Fogra Medienkeil 3.0 wird geprüft, ob der Druck den Qualitätsstandards entspricht [14].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Metamerie",
+                explanation: "Phänomen, bei dem Farben unter verschiedenen Lichtquellen unterschiedlich aussehen [14], [15].",
+                example: "Eine Farbe sieht unter Tageslicht anders aus als unter Kunstlicht – wichtig bei der Farbabnahme [14].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Medienstandard Druck",
+                explanation: "Aktueller Standard für Druckproduktion, hat das Handbuch für den ProzessStandard Offsetdruck abgelöst [14].",
+                example: "AllesDRUCK arbeitet nach dem Medienstandard Druck, um konsistente Qualität zu gewährleisten [14].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Blauer Engel",
+                explanation: "Umweltzeichen für Druckerzeugnisse (RAL-UZ 195), das hohe Ansprüche an Umwelt-, Gesundheits- und Gebrauchseigenschaften garantiert [15].",
+                example: "AllesDRUCK bietet Druck mit dem Blauen Engel an, der Papierqualität, Druckprozess und Verfahren bewertet [15].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Weiterverarbeitung",
+                explanation: "Alle Prozesse nach dem Druck: Schneiden, Falzen, Binden, Heften, Verpacken.",
+                example: "Nach dem Druck werden die Broschüren geschnitten, gefalzt und geheftet [28].",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Druckvorstufe",
+                explanation: "Alle Prozesse vor dem eigentlichen Druck: Datenaufbereitung, Bildbearbeitung, Seitengestaltung, Druckplattenherstellung.",
+                example: "In der Druckvorstufe werden Bilder bearbeitet, Texte gesetzt und Druckdaten für die Produktion vorbereitet.",
+                categories: ["print"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // KI (KÜNSTLICHE INTELLIGENZ)
+            {
+                term: "KI-gestützte Datenbereinigung",
+                explanation: "Einsatz von KI zur automatischen Identifizierung und Korrektur fehlerhafter, inkonsistenter oder doppelter Daten sowie zur Vervollständigung fehlender Werte.",
+                example: "DataCraft nutzt KI, um doppelte Kundendatensätze aus verschiedenen Quellen zu erkennen und intelligent zusammenzuführen, wodurch die Datenqualität steigt.",
+                categories: ["it", "qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Anomalie-Detektion durch KI",
+                explanation: "KI-Modelle erkennen automatisch Muster und Abweichungen in großen Datensätzen, um auf Fehler oder Betrugsversuche hinzuweisen.",
+                example: "SmartFit nutzt KI, um ungewöhnliches Nutzerverhalten (z.B. Login von unbekanntem Standort) zu erkennen und Sicherheitschecks durchzuführen.",
+                categories: ["it", "qm"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "KI-Chatbot",
+                explanation: "KI-basiertes Dialogsystem, das Nutzern bei Fragen hilft, komplexe Formulare erklärt und Plausibilitätsprüfungen durchführt.",
+                example: "EduSmart integriert einen KI-Chatbot, der Schülern bei schwierigen Aufgaben hilft und Fehler in Eingaben bereits während der Eingabe korrigiert.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Personalisierung durch KI",
+                explanation: "KI analysiert Nutzerdaten, um individuell angepasste Inhalte, Empfehlungen oder Lernpfade zu erstellen.",
+                example: "EduSmart passt Lerninhalte basierend auf Lernfortschritt und Eye-Tracking-Daten individuell an jeden Schüler an.",
+                categories: ["it", "marketing"],
+                box: 1,
+                correctCount: 0
+            }
+        ];
+
+        let currentCategory = 'alle';
+        let currentCards = [];
+        let currentIndex = 0;
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+
+        // Lokale Speicherung
+        function saveToLocalStorage() {
+            localStorage.setItem('flashcards', JSON.stringify(flashcards));
+            localStorage.setItem('settings', JSON.stringify(appSettings));
+            localStorage.setItem('sessionStats', JSON.stringify(overallStats));
+        }
+
+        function loadFromLocalStorage() {
+            const savedCards = localStorage.getItem('flashcards');
+            if (savedCards) {
+                const loadedCards = JSON.parse(savedCards);
+                // Merge loaded data into existing flashcards array
+                flashcards.forEach((card, index) => {
+                    if (loadedCards[index] && loadedCards[index].term === card.term) { // Check if term matches to avoid issues if card order changes
+                        card.box = loadedCards[index].box;
+                        card.correctCount = loadedCards[index].correctCount;
+                    }
+                });
+            }
+
+            const savedSettings = localStorage.getItem('settings');
+            if (savedSettings) {
+                appSettings = JSON.parse(savedSettings);
+                applySettings();
+            }
+
+            const savedStats = localStorage.getItem('sessionStats');
+            if (savedStats) {
+                overallStats = JSON.parse(savedStats);
+            }
+        }
+
+        // Settings handling
+        let appSettings = {
+            fontFamily: 'Arial, sans-serif',
+            bgColor: '#f5f5f5',
+            textColor: '#333333'
+        };
+
+        function applySettings() {
+            document.documentElement.style.setProperty('--font-family', appSettings.fontFamily);
+            document.documentElement.style.setProperty('--bg-color', appSettings.bgColor);
+            document.documentElement.style.setProperty('--text-color', appSettings.textColor);
+            document.getElementById('fontSelect').value = appSettings.fontFamily;
+            document.getElementById('bgColor').value = appSettings.bgColor;
+            document.getElementById('textColor').value = appSettings.textColor;
+        }
+
+        // SM-2 algorithm logic
+        const repetitionIntervals = {
+            1: 1, // Repeat after 1 day
+            2: 6, // Repeat after 6 days
+            3: 16, // Repeat after 16 days
+            4: 35, // Repeat after 35 days
+            5: Infinity // Mastered - rarely repeat
+        };
+
+        // Overall statistics
+        let overallStats = {
+            totalLearned: 0,
+            masteredCards: 0,
+            totalCorrectAttempts: 0,
+            totalWrongAttempts: 0,
+            lastLearnDate: null,
+            currentStreak: 0
+        };
+
+        // UI Element References
+        const categoryScreen = document.getElementById('categoryScreen');
+        const cardScreen = document.getElementById('cardScreen');
+        const settingsScreen = document.getElementById('settingsScreen');
+        const statsScreen = document.getElementById('statsScreen');
+        const cardCategoryBadge = document.getElementById('cardCategory');
+        const cardTermElement = document.getElementById('cardTerm');
+        const cardExplanationElement = document.getElementById('cardExplanation');
+        const cardExampleElement = document.getElementById('cardExample');
+        const currentBoxInfo = document.getElementById('currentBox');
+        const progressTextElement = document.getElementById('progressText');
+        const progressFillElement = document.getElementById('progressFill');
+        const correctCountMini = document.getElementById('correctCount');
+        const wrongCountMini = document.getElementById('wrongCount');
+        const flashcardElement = document.getElementById('flashcard');
+
+        // Event Listeners
+        document.querySelectorAll('.category-btn').forEach(button => {
+            button.addEventListener('click', (event) => startLearning(event.target.dataset.category));
+        });
+        document.getElementById('flipBtn').addEventListener('click', toggleExplanation);
+        document.getElementById('correctBtn').addEventListener('click', markCorrect);
+        document.getElementById('wrongBtn').addEventListener('click', markWrong);
+        document.getElementById('backToCategories').addEventListener('click', () => showScreen('category'));
+
+        // Settings Event Listeners
+        document.getElementById('fontSelect').addEventListener('change', (event) => {
+            appSettings.fontFamily = event.target.value;
+            applySettings();
+            saveToLocalStorage();
+        });
+        document.getElementById('bgColor').addEventListener('input', (event) => {
+            appSettings.bgColor = event.target.value;
+            applySettings();
+            saveToLocalStorage();
+        });
+        document.getElementById('textColor').addEventListener('input', (event) => {
+            appSettings.textColor = event.target.value;
+            applySettings();
+            saveToLocalStorage();
+        });
+
+        document.getElementById('resetProgressBtn').addEventListener('click', resetProgress);
+        document.getElementById('exportBtn').addEventListener('click', exportCardsToCSV);
+        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('fileInput').addEventListener('change', importCardsFromCSV);
+
+        // Bottom Nav Listeners
+        document.querySelectorAll('.bottom-nav .nav-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const screenId = event.target.dataset.screen;
+                showScreen(screenId);
+                document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+            });
+        });
+
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.add('hidden');
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId + 'Screen').classList.remove('hidden');
+            document.getElementById(screenId + 'Screen').classList.add('active');
+
+            if (screenId === 'stats') {
+                updateOverallStatsDisplay();
+            } else if (screenId === 'category') {
+                document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector('.bottom-nav .nav-btn[data-screen="category"]').classList.add('active');
+            }
+        }
+
+        function filterCardsByBox(cardsToFilter) {
+            const today = new Date().setHours(0, 0, 0, 0); // Reset time for comparison
+            return cardsToFilter.filter(card => {
+                if (card.lastReviewedDate) {
+                    const lastReview = new Date(card.lastReviewedDate).setHours(0, 0, 0, 0);
+                    const daysSinceReview = Math.floor((today - lastReview) / (1000 * 60 * 60 * 24));
+                    return daysSinceReview >= repetitionIntervals[card.box];
+                }
+                return true; // New cards or cards not yet reviewed are always ready
+            });
+        }
+
+
+        function startLearning(category) {
+            currentCategory = category;
+            let filtered = category === 'alle'
+                ? [...flashcards]
+                : flashcards.filter(card => card.categories.includes(category));
+
+            currentCards = filterCardsByBox(filtered); // Filter based on SM-2 intervals
+
+            if (currentCards.length === 0) {
+                alert(`Keine neuen Karten in dieser Kategorie (${category}) oder alle Karten sind in höheren Boxen und warten auf Wiederholung. Versuche es morgen wieder oder wähle 'Alle Begriffe'.`);
+                showScreen('category');
+                return;
+            }
+
+            // Sort by Box, then randomize within boxes to prioritize lower boxes but keep randomness
+            currentCards.sort((a, b) => a.box - b.box || Math.random() - 0.5);
+
+            currentIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+
+            showScreen('card');
+            showCard();
+        }
+
+        function showCard() {
+            if (currentIndex >= currentCards.length) {
+                alert(`Lerneinheit beendet! ✅ Richtig: ${correctAnswers}, ❌ Falsch: ${wrongAnswers}`);
+                updateOverallStatsOnSessionEnd();
+                showScreen('category');
+                return;
+            }
+
+            const card = currentCards[currentIndex];
+            cardCategoryBadge.textContent = card.categories[0].toUpperCase(); // Nur die erste Kategorie anzeigen
+            cardTermElement.textContent = card.term;
+            cardExplanationElement.innerHTML = `<h3>📖 Erklärung:</h3><p>${card.explanation}</p>`;
+            cardExampleElement.innerHTML = `<h4>💡 Beispiel:</h4><p>${card.example}</p>`;
+            currentBoxInfo.textContent = card.box;
+
+            flashcardElement.classList.remove('flipped'); // Reset card flip
+            cardExplanationElement.classList.remove('show');
+            cardExampleElement.classList.remove('show');
+
+            updateStatsDisplay();
+        }
+
+        function toggleExplanation() {
+            flashcardElement.classList.toggle('flipped');
+            cardExplanationElement.classList.add('show');
+            cardExampleElement.classList.add('show');
+        }
+
+        function markCorrect() {
+            const card = currentCards[currentIndex];
+            correctAnswers++;
+            overallStats.totalCorrectAttempts++;
+
+            card.correctCount++;
+            if (card.correctCount >= 4) { // Simulate "mastered" for higher box promotion
+                card.box = Math.min(5, card.box + 1);
+                card.correctCount = 0; // Reset for next box
+            } else {
+                 card.box = Math.min(5, card.box + 1); // Also advance box for less than 4 for incremental learning
+            }
+            
+            card.lastReviewedDate = new Date().toISOString(); // Store review date
+            
+            saveToLocalStorage();
+            currentIndex++;
+            showCard();
+        }
+
+        function markWrong() {
+            const card = currentCards[currentIndex];
+            wrongAnswers++;
+            overallStats.totalWrongAttempts++;
+            
+            card.box = 1; // Zurück zu Box 1
+            card.correctCount = 0; // Reset correct streak
+            card.lastReviewedDate = new Date().toISOString(); // Store review date
+
+            saveToLocalStorage();
+            currentIndex++;
+            showCard();
+        }
+
+        function updateStatsDisplay() {
+            progressTextElement.textContent = `${currentIndex + 1} / ${currentCards.length}`;
+            progressFillElement.style.width = `${((currentIndex + 1) / currentCards.length) * 100}%`;
+            correctCountMini.textContent = correctAnswers;
+            wrongCountMini.textContent = wrongAnswers;
+        }
+
+        function resetProgress() {
+            if (confirm("Möchtest du deinen gesamten Lernfortschritt zurücksetzen? Dies kann nicht rückgängig gemacht werden.")) {
+                flashcards.forEach(card => {
+                    card.box = 1;
+                    card.correctCount = 0;
+                    delete card.lastReviewedDate;
+                });
+                overallStats = {
+                    totalLearned: 0,
+                    masteredCards: 0,
+                    totalCorrectAttempts: 0,
+                    totalWrongAttempts: 0,
+                    lastLearnDate: null,
+                    currentStreak: 0
+                };
+                saveToLocalStorage();
+                alert("Lernfortschritt wurde zurückgesetzt!");
+                updateOverallStatsDisplay();
+                showScreen('category');
+            }
+        }
+
+        function updateOverallStatsDisplay() {
+            overallStats.totalLearned = flashcards.length;
+            overallStats.masteredCards = flashcards.filter(card => card.box === 5).length;
+            const totalAttempts = overallStats.totalCorrectAttempts + overallStats.totalWrongAttempts;
+            overallStats.overallSuccessRate = totalAttempts > 0 ? ((overallStats.totalCorrectAttempts / totalAttempts) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalCards').textContent = overallStats.totalLearned;
+            document.getElementById('masteredCards').textContent = overallStats.masteredCards;
+            document.getElementById('overallSuccessRate').textContent = `${overallStats.overallSuccessRate}%`;
+            document.getElementById('currentStreak').textContent = overallStats.currentStreak;
+            
+            // Basic Chart (requires Chart.js)
+            // if (typeof Chart !== 'undefined') {
+            //     const ctx = document.getElementById('progressChart').getContext('2d');
+            //     new Chart(ctx, {
+            //         type: 'bar',
+            //         data: {
+            //             labels: ['Box 1', 'Box 2', 'Box 3', 'Box 4', 'Box 5 (Gemeistert)'],
+            //             datasets: [{
+            //                 label: 'Karten pro Box',
+            //                 data: [
+            //                     flashcards.filter(c => c.box === 1).length,
+            //                     flashcards.filter(c => c.box === 2).length,
+            //                     flashcards.filter(c => c.box === 3).length,
+            //                     flashcards.filter(c => c.box === 4).length,
+            //                     flashcards.filter(c => c.box === 5).length
+            //                 ],
+            //                 backgroundColor: [
+            //                     'rgba(244, 67, 54, 0.7)', // Red
+            //                     'rgba(255, 152, 0, 0.7)', // Orange
+            //                     'rgba(255, 235, 59, 0.7)', // Yellow
+            //                     'rgba(76, 175, 80, 0.7)', // Green
+            //                     'rgba(33, 150, 243, 0.7)'  // Blue (Primary)
+            //                 ],
+            //                 borderColor: [
+            //                     'rgba(244, 67, 54, 1)',
+            //                     'rgba(255, 152, 0, 1)',
+            //                     'rgba(255, 235, 59, 1)',
+            //                     'rgba(76, 175, 80, 1)',
+            //                     'rgba(33, 150, 243, 1)'
+            //                 ],
+            //                 borderWidth: 1
+            //             }]
+            //         },
+            //         options: {
+            //             responsive: true,
+            //             scales: {
+            //                 y: { beginAtZero: true, max: flashcards.length * 0.3 } // Adjust max for better visibility
+            //             }
+            //         }
+            //     });
+            // }
+        }
+
+        function updateOverallStatsOnSessionEnd() {
+            const today = new Date().toLocaleDateString();
+            if (overallStats.lastLearnDate !== today) {
+                if (overallStats.lastLearnDate) {
+                    const lastDate = new Date(overallStats.lastLearnDate);
+                    const diffTime = Math.abs(new Date().getTime() - lastDate.getTime());
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    if (diffDays === 1) { // If learned yesterday
+                        overallStats.currentStreak++;
+                    } else { // Break in streak
+                        overallStats.currentStreak = 1;
+                    }
+                } else {
+                    overallStats.currentStreak = 1;
+                }
+                overallStats.lastLearnDate = today;
+            }
+            saveToLocalStorage();
+        }
+
+        // CSV Export/Import
+        function exportCardsToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFFTerm,Explanation,Example,Categories,Box,CorrectCount\n";
+            flashcards.forEach(card => {
+                let row = [
+                    `"${card.term.replace(/"/g, '""')}"`,
+                    `"${card.explanation.replace(/"/g, '""')}"`,
+                    `"${card.example.replace(/"/g, '""')}"`,
+                    `"${card.categories.join('|').replace(/"/g, '""')}"`,
+                    card.box,
+                    card.correctCount
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "medienfachwirt_karteikarten.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            alert("Karteikarten als CSV exportiert!");
+        }
+
+        function importCardsFromCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let importedCount = 0;
+                for (let i = 1; i < lines.length; i++) { // Skip header row
+                    const line = lines[i].trim();
+                    if (line) {
+                        const parts = line.match(/(?:"[^"]*"|[^,])+/g).map(p => p.startsWith('"') ? p.slice(1, -1).replace(/""/g, '"') : p);
+                        if (parts.length >= 6) {
+                            const newCard = {
+                                term: parts[0],
+                                explanation: parts[1],
+                                example: parts[2],
+                                categories: parts[3].split('|').map(c => c.trim().toLowerCase()),
+                                box: parseInt(parts[4]) || 1,
+                                correctCount: parseInt(parts[5]) || 0
+                            };
+                            // Check for duplicates before adding
+                            if (!flashcards.some(card => card.term === newCard.term)) {
+                                flashcards.push(newCard);
+                                importedCount++;
+                            }
+                        }
+                    }
+                }
+                saveToLocalStorage();
+                alert(`${importedCount} neue Karteikarten importiert!`);
+                event.target.value = ''; // Reset file input
+                showScreen('category');
+            };
+            reader.readAsText(file);
+        }
+
+        // Initialisierung
+        window.addEventListener('load', () => {
+            loadFromLocalStorage();
+            applySettings();
+            updateOverallStatsDisplay(); // Initial display of stats
+            showScreen('category'); // Ensure starting on category screen
+        });
+        
+        // Service Worker Registration for PWA (Offline functionality)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for statistics (optional) -->
+</body>
+</html>

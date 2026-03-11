@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medienfachwirt Karteikarten</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --bg-color: #f5f5f5;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .category-btn {
+            background: white;
+            border: 2px solid var(--primary-color);
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .category-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-5px);
+        }
+
+        .flashcard {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            min-height: 300px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+
+        .card-term {
+            font-size: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+            color: var(--primary-color);
+        }
+
+        .card-explanation, .card-example {
+            display: none;
+            margin: 1rem 0;
+        }
+
+        .card-explanation.show, .card-example.show {
+            display: block;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .stats {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>📚 Medienfachwirt Karteikarten</h1>
+    </nav>
+
+    <div class="container">
+        <!-- Kategorieauswahl -->
+        <div id="categoryScreen">
+            <h2>Wähle deine Kategorie</h2>
+            <div class="category-grid">
+                <button class="category-btn" onclick="startLearning('alle')">Alle Begriffe</button>
+                <button class="category-btn" onclick="startLearning('recht')">Recht</button>
+                <button class="category-btn" onclick="startLearning('it')">IT & Digital</button>
+                <button class="category-btn" onclick="startLearning('marketing')">Marketing</button>
+                <button class="category-btn" onclick="startLearning('print')">Print & Produktion</button>
+                <button class="category-btn" onclick="startLearning('personal')">Personal</button>
+                <button class="category-btn" onclick="startLearning('bwl')">BWL & Kalkulation</button>
+                <button class="category-btn" onclick="startLearning('qm')">Qualitätsmanagement</button>
+            </div>
+        </div>
+
+        <!-- Karteikarten-Ansicht -->
+        <div id="cardScreen" class="hidden">
+            <div class="stats">
+                <strong>Fortschritt:</strong> <span id="progress">0/0</span> | 
+                <strong>Richtig:</strong> <span id="correctCount">0</span> | 
+                <strong>Falsch:</strong> <span id="wrongCount">0</span>
+            </div>
+
+            <div class="flashcard">
+                <h2 class="card-term" id="cardTerm"></h2>
+                <button class="btn btn-primary" onclick="toggleExplanation()">📖 Erklärung anzeigen</button>
+                <div class="card-explanation" id="cardExplanation"></div>
+                <div class="card-example" id="cardExample"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-danger" onclick="markWrong()">❌ Nicht gewusst</button>
+                <button class="btn btn-success" onclick="markCorrect()">✅ Gewusst</button>
+            </div>
+
+            <button class="btn btn-primary" onclick="backToCategories()">← Zurück zu Kategorien</button>
+        </div>
+    </div>
+
+    <script>
+        // Karteikarten-Datenbank (Beispieldaten - hier fügst du deine Begriffe ein)
+        const flashcards = [
+            {
+                term: "DSGVO",
+                explanation: "Die Datenschutz-Grundverordnung ist eine EU-Verordnung zum Schutz personenbezogener Daten.",
+                example: "Bei der EduSmart Lernplattform müssen für minderjährige Nutzer besondere Einwilligungen der Eltern eingeholt werden.",
+                categories: ["recht", "it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Responsive Design",
+                explanation: "Responsive Webdesign passt sich automatisch an verschiedene Bildschirmgrößen an.",
+                example: "Die OnlineFurniture-Website muss auf Desktop, Tablet und Smartphone optimal dargestellt werden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "BCG-Matrix",
+                explanation: "Die Boston Consulting Group Matrix kategorisiert Produkte in vier Typen: Stars, Cash Cows, Question Marks und Poor Dogs.",
+                example: "Der Premium-Flyer A5 ist eine Cash Cow mit hohem Deckungsbeitrag aber geringem Marktwachstum.",
+                categories: ["marketing", "bwl"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Foreign Key",
+                explanation: "Ein Fremdschlüssel stellt in relationalen Datenbanken eine Verbindung zwischen Tabellen her und sichert die referentielle Integrität.",
+                example: "In der Bestellungen-Tabelle verweist die KundenID auf die Kunden-Tabelle.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kaizen (KVP)",
+                explanation: "Kontinuierlicher Verbesserungsprozess mit kleinen, inkrementellen Schritten unter Einbeziehung aller Mitarbeiter.",
+                example: "Bei der Optimierung einer bestehenden KI-Anwendung werden fortlaufend kleine Verbesserungen vorgenommen.",
+                categories: ["qm", "personal"],
+                box: 1,
+                correctCount: 0
+            }
+            // Hier fügst du weitere Karteikarten hinzu
+        ];
+
+        let currentCategory = 'alle';
+        let currentCards = [];
+        let currentIndex = 0;
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+
+        function startLearning(category) {
+            currentCategory = category;
+            currentCards = category === 'alle' 
+                ? [...flashcards]
+                : flashcards.filter(card => card.categories.includes(category));
+            
+            // Zufällige Reihenfolge
+            currentCards.sort(() => Math.random() - 0.5);
+            
+            currentIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            
+            document.getElementById('categoryScreen').classList.add('hidden');
+            document.getElementById('cardScreen').classList.remove('hidden');
+            
+            showCard();
+        }
+
+        function showCard() {
+            if (currentIndex >= currentCards.length) {
+                alert(`Fertig! Richtig: ${correctAnswers}, Falsch: ${wrongAnswers}`);
+                backToCategories();
+                return;
+            }
+
+            const card = currentCards[currentIndex];
+            document.getElementById('cardTerm').textContent = card.term;
+            document.getElementById('cardExplanation').innerHTML = `<h3>Erklärung:</h3><p>${card.explanation}</p>`;
+            document.getElementById('cardExample').innerHTML = `<h4>💡 Beispiel:</h4><p>${card.example}</p>`;
+            
+            // Erklärung verstecken
+            document.getElementById('cardExplanation').classList.remove('show');
+            document.getElementById('cardExample').classList.remove('show');
+            
+            updateStats();
+        }
+
+        function toggleExplanation() {
+            document.getElementById('cardExplanation').classList.add('show');
+            document.getElementById('cardExample').classList.add('show');
+        }
+
+        function markCorrect() {
+            correctAnswers++;
+            currentCards[currentIndex].correctCount++;
+            
+            // SM-2 Algorithmus vereinfacht
+            if (currentCards[currentIndex].correctCount >= 4) {
+                currentCards[currentIndex].box = Math.min(5, currentCards[currentIndex].box + 1);
+            }
+            
+            currentIndex++;
+            showCard();
+        }
+
+        function markWrong() {
+            wrongAnswers++;
+            currentCards[currentIndex].box = 1; // Zurück zu Box 1
+            currentCards[currentIndex].correctCount = 0;
+            currentIndex++;
+            showCard();
+        }
+
+        function updateStats() {
+            document.getElementById('progress').textContent = `${currentIndex + 1}/${currentCards.length}`;
+            document.getElementById('correctCount').textContent = correctAnswers;
+            document.getElementById('wrongCount').textContent = wrongAnswers;
+        }
+
+        function backToCategories() {
+            document.getElementById('categoryScreen').classList.remove('hidden');
+            document.getElementById('cardScreen').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

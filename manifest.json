@@ -1,0 +1,21 @@
+{
+    "name": "Medienfachwirt Lernkarten",
+    "short_name": "MFW Karten",
+    "description": "Lernkarten-App für die Prüfungsvorbereitung Medienfachwirt Digital",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#f5f5f5",
+    "theme_color": "#2196F3",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

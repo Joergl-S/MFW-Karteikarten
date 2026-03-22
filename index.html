@@ -2001,10 +2001,10 @@
         // Bottom Nav Listeners
         document.querySelectorAll('.bottom-nav .nav-btn').forEach(button => {
             button.addEventListener('click', (event) => {
-                const screenId = event.target.dataset.screen;
+                const screenId = event.currentTarget.dataset.screen;
                 showScreen(screenId);
                 document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
-                event.target.classList.add('active');
+                event.currentTarget.classList.add('active');
             });
         });
 
@@ -2074,8 +2074,8 @@
             const card = currentCards[currentIndex];
             cardCategoryBadge.textContent = card.categories[0].toUpperCase(); // Nur die erste Kategorie anzeigen
             cardTermElement.textContent = card.term;
-            cardExplanationElement.innerHTML = `<h3>📖 Erklärung:</h3><p>${card.explanation}</p>`;
-            cardExampleElement.innerHTML = `<h4>💡 Beispiel:</h4><p>${card.example}</p>`;
+            cardExplanationElement.textContent = card.explanation;
+            cardExampleElement.textContent = card.example;
             currentBoxInfo.textContent = card.box;
 
             flashcardElement.classList.remove('flipped'); // Reset card flip
@@ -2097,12 +2097,7 @@
             overallStats.totalCorrectAttempts++;
 
             card.correctCount++;
-            if (card.correctCount >= 4) { // Simulate "mastered" for higher box promotion
-                card.box = Math.min(5, card.box + 1);
-                card.correctCount = 0; // Reset for next box
-            } else {
-                 card.box = Math.min(5, card.box + 1); // Also advance box for less than 4 for incremental learning
-            }
+            card.box = Math.min(5, card.box + 1);
             
             card.lastReviewedDate = new Date().toISOString(); // Store review date
             
@@ -2209,12 +2204,12 @@
         }
 
         function updateOverallStatsOnSessionEnd() {
-            const today = new Date().toLocaleDateString();
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD, locale-independent
             if (overallStats.lastLearnDate !== today) {
                 if (overallStats.lastLearnDate) {
                     const lastDate = new Date(overallStats.lastLearnDate);
-                    const diffTime = Math.abs(new Date().getTime() - lastDate.getTime());
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    const todayDate = new Date(today);
+                    const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
                     if (diffDays === 1) { // If learned yesterday
                         overallStats.currentStreak++;
                     } else { // Break in streak

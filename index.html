@@ -335,6 +335,109 @@
             margin: 1.5rem 0;
         }
 
+        /* Karteikarten-Übersicht Accordion */
+        .overview-section-label {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .category-accordion {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: var(--card-bg);
+            cursor: pointer;
+            user-select: none;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .accordion-header:hover {
+            background: #f0f0f0;
+        }
+
+        .accordion-header .cat-label {
+            flex: 1;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .accordion-count {
+            font-size: 0.85rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.15rem 0.55rem;
+            border-radius: 20px;
+        }
+
+        .accordion-arrow {
+            font-size: 0.8rem;
+            color: #888;
+            transition: transform 0.25s;
+        }
+
+        .accordion-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .accordion-body {
+            display: none;
+            border-top: 1px solid #eee;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .accordion-body.open {
+            display: block;
+        }
+
+        .card-list-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+
+        .card-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .card-num {
+            color: #aaa;
+            min-width: 1.8rem;
+            font-size: 0.8rem;
+        }
+
+        .card-term {
+            flex: 1;
+        }
+
+        .card-box-badge {
+            font-size: 0.75rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 20px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .box-1 { background: #ffcdd2; color: #c62828; }
+        .box-2 { background: #ffe0b2; color: #e65100; }
+        .box-3 { background: #fff9c4; color: #f57f17; }
+        .box-4 { background: #c8e6c9; color: #2e7d32; }
+        .box-5 { background: #bbdefb; color: #1565c0; }
+
         .setting-group label {
             display: block;
             font-weight: bold;
@@ -542,6 +645,12 @@
 
             <button id="exportBtn" class="secondary-btn">📤 Export CSV</button>
             <button id="resetProgressBtn" class="secondary-btn danger">🔄 Fortschritt zurücksetzen</button>
+
+            <div class="setting-group">
+                <span class="overview-section-label">📋 Karteikarten-Übersicht</span>
+                <div id="cardOverview"></div>
+            </div>
+
             <button id="closeSettings" class="primary-btn" onclick="showScreen('category')">Zurück</button>
         </div>
 
@@ -2512,6 +2621,8 @@
 
             if (screenId === 'stats') {
                 updateOverallStatsDisplay();
+            } else if (screenId === 'settings') {
+                buildCardOverview();
             } else if (screenId === 'category') {
                 document.querySelectorAll('.bottom-nav .nav-btn').forEach(btn => btn.classList.remove('active'));
                 document.querySelector('.bottom-nav .nav-btn[data-screen="category"]').classList.add('active');
@@ -2714,6 +2825,86 @@
                 overallStats.lastLearnDate = today;
             }
             saveToLocalStorage();
+        }
+
+        // Karteikarten-Übersicht
+        const CATEGORIES = [
+            { id: 'recht',     label: 'Recht' },
+            { id: 'it',        label: 'IT & Digital' },
+            { id: 'marketing', label: 'Marketing' },
+            { id: 'bwl',       label: 'BWL & Kalkulation' },
+            { id: 'qm',        label: 'Qualitätsmanagement' },
+            { id: 'personal',  label: 'Personal' },
+            { id: 'print',     label: 'Print & Produktion' },
+        ];
+
+        function buildCardOverview() {
+            const container = document.getElementById('cardOverview');
+            container.innerHTML = '';
+
+            CATEGORIES.forEach(cat => {
+                const cards = flashcards.filter(c => c.categories.includes(cat.id));
+
+                const accordion = document.createElement('div');
+                accordion.className = 'category-accordion';
+
+                // Header
+                const header = document.createElement('div');
+                header.className = 'accordion-header';
+
+                const labelEl = document.createElement('span');
+                labelEl.className = 'cat-label';
+                labelEl.textContent = cat.label;
+
+                const countEl = document.createElement('span');
+                countEl.className = 'accordion-count';
+                countEl.textContent = `${cards.length} Karten`;
+
+                const arrowEl = document.createElement('span');
+                arrowEl.className = 'accordion-arrow';
+                arrowEl.textContent = '▼';
+
+                header.appendChild(labelEl);
+                header.appendChild(countEl);
+                header.appendChild(arrowEl);
+                header.addEventListener('click', () => toggleAccordion(header, body, arrowEl));
+
+                // Body
+                const body = document.createElement('div');
+                body.className = 'accordion-body';
+
+                cards.forEach((card, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'card-list-item';
+
+                    const num = document.createElement('span');
+                    num.className = 'card-num';
+                    num.textContent = `${i + 1}.`;
+
+                    const term = document.createElement('span');
+                    term.className = 'card-term';
+                    term.textContent = card.term;
+
+                    const boxBadge = document.createElement('span');
+                    boxBadge.className = `card-box-badge box-${card.box}`;
+                    boxBadge.textContent = `Box ${card.box}`;
+
+                    item.appendChild(num);
+                    item.appendChild(term);
+                    item.appendChild(boxBadge);
+                    body.appendChild(item);
+                });
+
+                accordion.appendChild(header);
+                accordion.appendChild(body);
+                container.appendChild(accordion);
+            });
+        }
+
+        function toggleAccordion(header, body, arrow) {
+            const isOpen = body.classList.contains('open');
+            body.classList.toggle('open', !isOpen);
+            arrow.classList.toggle('open', !isOpen);
         }
 
         // CSV Export/Import

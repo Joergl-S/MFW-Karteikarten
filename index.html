@@ -154,8 +154,13 @@
             padding: 2rem;
             min-height: 300px;
             position: relative;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
+            cursor: grab;
+            user-select: none;
+            will-change: transform;
+        }
+
+        .flashcard.dragging {
+            cursor: grabbing;
         }
 
         .flashcard.flipped .card-front {
@@ -164,6 +169,36 @@
 
         .flashcard.flipped .card-back {
             display: block;
+        }
+
+        .swipe-overlay {
+            position: absolute;
+            top: 24px;
+            padding: 0.35rem 0.9rem;
+            border-radius: 8px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            border: 4px solid;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: opacity 0.07s;
+        }
+
+        .swipe-overlay.like {
+            left: 20px;
+            color: var(--success-color);
+            border-color: var(--success-color);
+            transform: rotate(-12deg);
+        }
+
+        .swipe-overlay.nope {
+            right: 20px;
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+            transform: rotate(12deg);
         }
 
         .card-badge {
@@ -449,6 +484,8 @@
 
             <div class="card-container">
                 <div id="flashcard" class="flashcard">
+                    <div id="swipeLike" class="swipe-overlay like">✅ Gewusst!</div>
+                    <div id="swipeNope" class="swipe-overlay nope">❌ Nope!</div>
                     <div class="card-front">
                         <span class="card-badge" id="cardCategory"></span>
                         <h2 id="cardTerm"></h2>
@@ -1932,6 +1969,136 @@
             document.getElementById('textColor').value = appSettings.textColor;
         }
 
+        // ── Swipe / Drag ────────────────────────────────────────────────
+        const SWIPE_THRESHOLD = 90;
+        let isDragging = false;
+        let isAnimating = false;
+        let dragStartX = 0;
+        let dragCurrentX = 0;
+
+        const swipeLike = document.getElementById('swipeLike');
+        const swipeNope = document.getElementById('swipeNope');
+
+        function getClientX(e) {
+            return e.touches ? e.touches[0].clientX : e.clientX;
+        }
+
+        function startDrag(e) {
+            if (isAnimating) return;
+            if (!document.getElementById('cardScreen').classList.contains('active')) return;
+            isDragging = true;
+            dragStartX = getClientX(e);
+            dragCurrentX = dragStartX;
+            flashcardElement.style.transition = 'none';
+            flashcardElement.classList.add('dragging');
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault();
+            dragCurrentX = getClientX(e);
+            const dx = dragCurrentX - dragStartX;
+            const rot = dx * 0.07;
+            flashcardElement.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+            const ratio = Math.min(1, Math.abs(dx) / SWIPE_THRESHOLD);
+            if (dx > 10) {
+                swipeLike.style.opacity = ratio;
+                swipeNope.style.opacity = 0;
+            } else if (dx < -10) {
+                swipeNope.style.opacity = ratio;
+                swipeLike.style.opacity = 0;
+            } else {
+                swipeLike.style.opacity = 0;
+                swipeNope.style.opacity = 0;
+            }
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            flashcardElement.classList.remove('dragging');
+            const dx = dragCurrentX - dragStartX;
+            flashcardElement.style.transition = '';
+            if (dx > SWIPE_THRESHOLD) {
+                animateSwipe('right', markCorrect);
+            } else if (dx < -SWIPE_THRESHOLD) {
+                animateSwipe('left', markWrong);
+            } else {
+                flashcardElement.style.transform = '';
+                swipeLike.style.opacity = 0;
+                swipeNope.style.opacity = 0;
+            }
+        }
+
+        function animateSwipe(direction, callback) {
+            if (isAnimating) return;
+            isAnimating = true;
+            playSound(direction === 'right' ? 'correct' : 'wrong');
+            const xOut = direction === 'right' ? window.innerWidth * 1.5 : -window.innerWidth * 1.5;
+            const rotOut = direction === 'right' ? 35 : -35;
+            flashcardElement.style.transition = 'transform 0.38s ease-out, opacity 0.38s ease-out';
+            flashcardElement.style.transform = `translateX(${xOut}px) rotate(${rotOut}deg)`;
+            flashcardElement.style.opacity = '0';
+            setTimeout(() => {
+                flashcardElement.style.transition = 'none';
+                flashcardElement.style.transform = '';
+                flashcardElement.style.opacity = '1';
+                swipeLike.style.opacity = 0;
+                swipeNope.style.opacity = 0;
+                isAnimating = false;
+                callback();
+            }, 400);
+        }
+
+        // ── Sound (Web Audio API) ───────────────────────────────────────
+        let audioCtx = null;
+
+        function getAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioCtx();
+                const now = ctx.currentTime;
+                if (type === 'correct') {
+                    // Aufsteigendes Arpeggio C5 → E5 → G5
+                    [[523.25, 0], [659.25, 0.11], [783.99, 0.22]].forEach(([freq, delay]) => {
+                        const osc = ctx.createOscillator();
+                        const g = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        osc.connect(g);
+                        g.connect(ctx.destination);
+                        g.gain.setValueAtTime(0, now + delay);
+                        g.gain.linearRampToValueAtTime(0.22, now + delay + 0.02);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.35);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + 0.35);
+                    });
+                } else {
+                    // Absteigendes Brummen
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.connect(g);
+                    g.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.linearRampToValueAtTime(100, now + 0.32);
+                    g.gain.setValueAtTime(0.18, now);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                    osc.start(now);
+                    osc.stop(now + 0.38);
+                }
+            } catch (e) {
+                console.warn('Sound konnte nicht abgespielt werden:', e);
+            }
+        }
+
         // SM-2 algorithm logic
         const repetitionIntervals = {
             1: 1, // Repeat after 1 day
@@ -1972,9 +2139,17 @@
             button.addEventListener('click', (event) => startLearning(event.target.dataset.category));
         });
         document.getElementById('flipBtn').addEventListener('click', toggleExplanation);
-        document.getElementById('correctBtn').addEventListener('click', markCorrect);
-        document.getElementById('wrongBtn').addEventListener('click', markWrong);
+        document.getElementById('correctBtn').addEventListener('click', () => animateSwipe('right', markCorrect));
+        document.getElementById('wrongBtn').addEventListener('click', () => animateSwipe('left', markWrong));
         document.getElementById('backToCategories').addEventListener('click', () => showScreen('category'));
+
+        // Swipe drag listeners (needs flashcardElement, so placed after UI references)
+        flashcardElement.addEventListener('mousedown', startDrag);
+        flashcardElement.addEventListener('touchstart', startDrag, { passive: true });
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
 
         // Settings Event Listeners
         document.getElementById('fontSelect').addEventListener('change', (event) => {

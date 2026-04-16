@@ -595,7 +595,7 @@
                         <button id="flipBtn" class="flip-btn">🔄 Erklärung zeigen</button>
                     </div>
                     <div class="card-back hidden">
-                        <h3>Erklärung:</h3>
+                        <h3 id="explanationHeading">Erklärung:</h3>
                         <p id="cardExplanation"></p>
                         <div class="example-section">
                             <h4>💡 Beispiel:</h4>
@@ -2807,6 +2807,30 @@
             showCard();
         }
 
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Boldens term occurrences in text. Falls back to short form (before "(") if no match.
+        function boldTermInText(text, term) {
+            const safeText = escapeHtml(text);
+            const patterns = [escapeRegex(escapeHtml(term))];
+            const shortTerm = term.includes('(') ? term.split('(')[0].trim() : null;
+            if (shortTerm && shortTerm.length > 2) {
+                patterns.push(escapeRegex(escapeHtml(shortTerm)));
+            }
+            const regex = new RegExp(`(${patterns.join('|')})`, 'gi');
+            return safeText.replace(regex, '<strong>$1</strong>');
+        }
+
         function showCard() {
             if (currentIndex >= currentCards.length) {
                 alert(`Lerneinheit beendet! ✅ Richtig: ${correctAnswers}, ❌ Falsch: ${wrongAnswers}`);
@@ -2816,13 +2840,17 @@
             }
 
             const card = currentCards[currentIndex];
-            cardCategoryBadge.textContent = card.categories[0].toUpperCase(); // Nur die erste Kategorie anzeigen
+            cardCategoryBadge.textContent = card.categories[0].toUpperCase();
             cardTermElement.textContent = card.term;
-            cardExplanationElement.textContent = card.explanation;
+
+            const heading = document.getElementById('explanationHeading');
+            heading.innerHTML = `Erklärung: <strong>${escapeHtml(card.term)}</strong>`;
+
+            cardExplanationElement.innerHTML = boldTermInText(card.explanation, card.term);
             cardExampleElement.textContent = card.example;
             currentBoxInfo.textContent = card.box;
 
-            flashcardElement.classList.remove('flipped'); // Reset card flip
+            flashcardElement.classList.remove('flipped');
             cardExplanationElement.classList.remove('show');
             cardExampleElement.classList.remove('show');
 

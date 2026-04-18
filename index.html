@@ -1475,6 +1475,88 @@
                 correctCount: 0
             },
 
+            // ==================== IT: FORMULARDESIGN ====================
+            {
+                term: "Label (Feldbezeichnung)",
+                explanation: "Beschriftung, die einem Eingabefeld seinen Zweck erklärt. Muss dauerhaft sichtbar, eindeutig und per HTML korrekt mit dem Feld verknüpft sein (for/id-Attribut). Nicht zu verwechseln mit Placeholder-Text.",
+                example: "Im Bestellformular von OnlineFurniture steht über dem Eingabefeld permanent 'Lieferadresse' als Label – auch dann noch sichtbar, wenn der Nutzer bereits tippt.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Placeholder-Text",
+                explanation: "Hinweistext, der im leeren Eingabefeld erscheint und verschwindet sobald der Nutzer tippt. Zeigt Beispielwerte oder Eingabeformat. Kein Ersatz für Labels, da er bei Eingabe nicht mehr sichtbar ist.",
+                example: "Das E-Mail-Feld auf EduSmart zeigt als Placeholder 'z.B. max@mustermann.de' – der Nutzer sieht das Format, aber sobald er tippt, ist der Hinweis weg.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Inline-Validierung",
+                explanation: "Echtzeit-Rückmeldung direkt am Eingabefeld während oder direkt nach der Eingabe – noch vor dem Absenden des Formulars. Reduziert Frustration, da Fehler sofort und kontextnah angezeigt werden.",
+                example: "Bei der Registrierung auf SmartFit erscheint nach Verlassen des Passwortfeldes sofort ein grünes Häkchen wenn das Passwort stark genug ist – oder ein rotes Kreuz mit Hinweis.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fehlermeldung (Formular)",
+                explanation: "Klare, verständliche Rückmeldung wenn eine Eingabe fehlt oder falsch ist. Gute Fehlermeldungen beschreiben das Problem und zeigen die Lösung – ohne Fachjargon und direkt beim betroffenen Feld.",
+                example: "Statt 'Eingabe ungültig' zeigt OnlineFurniture: 'Bitte gib eine gültige E-Mail-Adresse ein, z.B. name@beispiel.de' – der Nutzer weiß genau, was zu tun ist.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Pflichtfeld",
+                explanation: "Eingabefeld, das ausgefüllt sein muss, bevor das Formular abgesendet werden kann. Wird standardmäßig mit einem Sternchen (*) markiert. Das Formular sollte erklären, was * bedeutet.",
+                example: "Im Checkout von VintageVibes sind Name, E-Mail und Lieferadresse mit * als Pflichtfelder markiert. Klickt der Nutzer auf 'Bestellen' ohne diese, wird er auf die leeren Felder hingewiesen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Hilfetext / Tooltip (Formular)",
+                explanation: "Zusätzliche Erklärung zu einem Formularfeld, die entweder dauerhaft unter dem Feld steht (Hilfetext) oder per Hover/Klick auf ein Info-Icon erscheint (Tooltip). Verhindert Fehleingaben durch proaktive Information.",
+                example: "Neben dem Feld 'Steuernummer' im EduSmart-Rechnungsformular erscheint ein ℹ-Icon. Per Hover öffnet ein Tooltip: 'Format: 13 Ziffern, zu finden auf deinem letzten Steuerbescheid.'",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Eingabemaske",
+                explanation: "Formatvorgabe für Eingabefelder, die die Eingabe automatisch in ein bestimmtes Format bringt. Verhindert Formatfehler und erleichtert die Eingabe strukturierter Daten wie Telefonnummern oder Datumsangaben.",
+                example: "Das Telefonfeld bei OnlineFurniture formatiert die Eingabe automatisch: Aus '01711234567' wird '+49 171 123 4567' – der Nutzer muss sich keine Gedanken über das Format machen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Feldgruppierung",
+                explanation: "Verwandte Formularfelder werden visuell zusammengefasst (z.B. mit einem Rahmen, Abstand oder einer gemeinsamen Überschrift). Erleichtert die Orientierung und zeigt logische Zusammenhänge zwischen Feldern.",
+                example: "Das Bestellformular von OnlineFurniture gliedert sich in drei Gruppen: 'Persönliche Daten', 'Lieferadresse' und 'Zahlungsart' – jede Gruppe hat eine eigene Überschrift und wird durch einen Rahmen abgegrenzt.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Autocomplete (Formular)",
+                explanation: "Funktion, die Eingabevorschläge basierend auf früheren Eingaben oder hinterlegten Daten anzeigt. Spart Tippaufwand und reduziert Fehler. Wird per HTML-Attribut aktiviert und durch den Browser unterstützt.",
+                example: "Beim erneuten Besuch von VintageVibes füllt der Browser durch Autocomplete automatisch Name, E-Mail und Adresse aus – der Nutzer muss seine Daten nicht neu eingeben.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Mehrstufiges Formular (Multi-Step Form)",
+                explanation: "Langes Formular wird in mehrere überschaubare Schritte aufgeteilt. Eine Fortschrittsanzeige zeigt dem Nutzer wo er steht. Reduziert die wahrgenommene Komplexität und senkt die Abbruchrate.",
+                example: "Der Checkout von OnlineFurniture ist dreistufig: Schritt 1 Adresse → Schritt 2 Versand → Schritt 3 Zahlung. Oben zeigt eine Leiste 'Schritt 2 von 3' – der Nutzer sieht das Ende.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+
             // ==================== MARKETING (25 Begriffe) ====================
             {
                 term: "BCG-Matrix",
@@ -1770,6 +1852,30 @@
                 term: "Lizenzmarke",
                 explanation: "Marke, deren Name und Logo gegen Gebühr (Lizenzgebühr) von Dritten für eigene Produkte genutzt werden darf. Der Markeninhaber verggibt das Nutzungsrecht ohne selbst zu produzieren.",
                 example: "Disney lizenziert seine Markennamen und Figuren an Spielzeughersteller, Textilunternehmen und Lebensmittelproduzenten – diese zahlen Lizenzgebühren und nutzen das Disney-Image für ihre Produkte.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Individualmarke",
+                explanation: "Marke, die von einer einzelnen natürlichen oder juristischen Person für deren eigene Waren oder Dienstleistungen eingetragen wird. Die häufigste Form der Markeneintragung – der Inhaber allein entscheidet über Nutzung und Lizenzierung.",
+                example: "Creative Visions GmbH lässt ihren Firmennamen und ihr Logo als Individualmarke beim DPMA eintragen – nur das Unternehmen selbst darf diese Marke nutzen und darüber verfügen.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Gewährleistungsmarke",
+                explanation: "Marke, die bestimmte Eigenschaften, Qualitätsstandards oder geographische Herkunft von Waren und Dienstleistungen zertifiziert. Wird von einer neutralen Organisation vergeben, nicht vom Hersteller selbst.",
+                example: "Das Stiftung-Warentest-Siegel und der 'Blauer Engel' sind Gewährleistungsmarken: Sie garantieren Käufern, dass geprüfte Standards eingehalten werden – unabhängig vom Hersteller.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kollektivmarke",
+                explanation: "Marke, die von einem Verband oder einer Vereinigung für seine Mitglieder eingetragen wird. Alle Mitglieder dürfen die Marke nutzen, sofern sie die Satzungsbedingungen erfüllen. Kennzeichnet Zugehörigkeit zu einer Gruppe.",
+                example: "Das 'Woolmark'-Logo ist eine Kollektivmarke: Alle Textilhersteller, die Mitglied der Wollorganisation sind und reine Schurwolle verarbeiten, dürfen dieses Zeichen auf ihren Produkten verwenden.",
                 categories: ["marketing"],
                 box: 1,
                 correctCount: 0

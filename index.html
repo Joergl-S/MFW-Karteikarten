@@ -1279,6 +1279,88 @@
                 correctCount: 0
             },
 
+            // ==================== IT: TESTARTEN & ROLLEN ====================
+            {
+                term: "Unit-Test (Modultest)",
+                explanation: "Testet eine einzelne Funktion oder Klasse isoliert vom Rest des Systems. Wird meist vom Entwickler selbst geschrieben und automatisiert ausgeführt. Ziel: sicherstellen, dass jede Einheit für sich korrekt funktioniert.",
+                example: "DataCraft testet die Funktion 'berechneRabatt()' isoliert: Eingabe 100 € + 20 % Rabatt → erwartete Ausgabe 80 €. Schlägt der Test fehl, liegt der Fehler genau in dieser Funktion.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Integrationstest",
+                explanation: "Testet das Zusammenspiel mehrerer Komponenten oder Systeme. Prüft, ob Module korrekt miteinander kommunizieren – z.B. Frontend mit Backend, Backend mit Datenbank oder zwei Microservices.",
+                example: "Nach dem Unit-Test der Bestellfunktion prüft DataCraft im Integrationstest, ob die Bestelldaten korrekt in die Datenbank geschrieben und per E-Mail-Service bestätigt werden.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Systemtest",
+                explanation: "Testet das vollständige, integrierte System gegen die definierten Anforderungen. Wird von einem unabhängigen Testteam durchgeführt und prüft funktionale sowie nicht-funktionale Anforderungen (Performance, Sicherheit).",
+                example: "Vor dem Go-Live testet das QA-Team der SmartFit-App das gesamte System: Registrierung, Training-Tracking, Push-Benachrichtigungen und Zahlungsabwicklung – alles zusammen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Abnahmetest (UAT – User Acceptance Test)",
+                explanation: "Der letzte Test vor der Freigabe, der vom Auftraggeber oder echten Endnutzern durchgeführt wird. Prüft, ob das System die Geschäftsanforderungen erfüllt und für den Produktivbetrieb bereit ist.",
+                example: "Die Marketingabteilung von OnlineFurniture führt den UAT durch: Sie testen den neuen Checkout-Prozess anhand realer Szenarien und erteilen erst dann die Freigabe für den Launch.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Regressionstest",
+                explanation: "Wiederholt bereits bestandene Tests nach einer Codeänderung, um sicherzustellen, dass neue Features oder Bugfixes keine bestehende Funktionalität beschädigt haben. Häufig automatisiert in der CI/CD-Pipeline.",
+                example: "Nach dem Bugfix im Warenkorb von OnlineFurniture läuft automatisch die komplette Regressionstest-Suite durch – 240 Tests prüfen, ob nichts anderes kaputt gegangen ist.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Testmanager",
+                explanation: "Verantwortlich für Planung, Koordination und Kontrolle aller Testaktivitäten. Erstellt den Testplan, definiert Ressourcen, überwacht Fortschritt und kommuniziert Testergebnisse an Projektleitung und Auftraggeber.",
+                example: "Der Testmanager bei DataCraft legt fest: Welche Module werden getestet? Welche Tools werden genutzt? Welche Kriterien müssen erfüllt sein, bevor das Release freigegeben wird?",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Testanalyst",
+                explanation: "Analysiert die Anforderungen und leitet daraus Testfälle ab. Bestimmt, was getestet werden muss, erstellt Testszenarien und prüft die Vollständigkeit der Testabdeckung.",
+                example: "Der Testanalyst bei EduSmart liest die User Stories und erstellt daraus konkrete Testfälle: 'Wenn Nutzer falsches Passwort eingibt, erscheint Fehlermeldung innerhalb von 1 Sekunde.'",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Tester (manuell)",
+                explanation: "Führt Testfälle manuell aus, dokumentiert Ergebnisse und meldet gefundene Fehler (Bugs) im Fehlerverfolgungssystem. Bewertet auch subjektive Qualitätsmerkmale wie Benutzerfreundlichkeit.",
+                example: "Der manuelle Tester bei SmartFit klickt systematisch alle Buttons und Formulare durch, testet Grenzwerte und hält jeden Bug mit Screenshot und Beschreibung in Jira fest.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "QA-Engineer (Testautomatisierung)",
+                explanation: "Entwickelt und pflegt automatisierte Testskripte, die ohne manuellen Eingriff ausgeführt werden. Setzt Tools wie Selenium, Cypress oder Appium ein und integriert Tests in die CI/CD-Pipeline.",
+                example: "Der QA-Engineer bei OnlineFurniture schreibt Cypress-Tests, die bei jedem neuen Commit automatisch den kompletten Checkout-Prozess im Browser simulieren und das Ergebnis prüfen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Product Owner (Rolle im Test)",
+                explanation: "Verantwortlich für die fachliche Abnahme (UAT). Priorisiert Testfälle nach Geschäftswert, entscheidet ob gefundene Bugs vor dem Release behoben werden müssen und erteilt die finale Freigabe.",
+                example: "Der Product Owner von EduSmart nimmt an der Abnahme teil und entscheidet: 'Der Anzeigebug in den Statistiken ist unkritisch – wir releasen trotzdem und fixen es im nächsten Sprint.'",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+
             // ==================== IT: BENUTZERFÜHRUNG & MENÜS ====================
             {
                 term: "Hauptnavigation",
@@ -1388,6 +1470,88 @@
                 term: "Kontextmenü",
                 explanation: "Menü, das durch Rechtsklick (Desktop) oder langen Druck (Mobil) erscheint und kontextbezogene Aktionen für ein bestimmtes Element anbietet.",
                 example: "Rechtsklick auf eine Datei im DataCraft-Dateimanager öffnet ein Kontextmenü mit: Öffnen | Umbenennen | Kopieren | Löschen | Eigenschaften.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== IT: FORMULARDESIGN ====================
+            {
+                term: "Label (Feldbezeichnung)",
+                explanation: "Beschriftung, die einem Eingabefeld seinen Zweck erklärt. Muss dauerhaft sichtbar, eindeutig und per HTML korrekt mit dem Feld verknüpft sein (for/id-Attribut). Nicht zu verwechseln mit Placeholder-Text.",
+                example: "Im Bestellformular von OnlineFurniture steht über dem Eingabefeld permanent 'Lieferadresse' als Label – auch dann noch sichtbar, wenn der Nutzer bereits tippt.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Placeholder-Text",
+                explanation: "Hinweistext, der im leeren Eingabefeld erscheint und verschwindet sobald der Nutzer tippt. Zeigt Beispielwerte oder Eingabeformat. Kein Ersatz für Labels, da er bei Eingabe nicht mehr sichtbar ist.",
+                example: "Das E-Mail-Feld auf EduSmart zeigt als Placeholder 'z.B. max@mustermann.de' – der Nutzer sieht das Format, aber sobald er tippt, ist der Hinweis weg.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Inline-Validierung",
+                explanation: "Echtzeit-Rückmeldung direkt am Eingabefeld während oder direkt nach der Eingabe – noch vor dem Absenden des Formulars. Reduziert Frustration, da Fehler sofort und kontextnah angezeigt werden.",
+                example: "Bei der Registrierung auf SmartFit erscheint nach Verlassen des Passwortfeldes sofort ein grünes Häkchen wenn das Passwort stark genug ist – oder ein rotes Kreuz mit Hinweis.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Fehlermeldung (Formular)",
+                explanation: "Klare, verständliche Rückmeldung wenn eine Eingabe fehlt oder falsch ist. Gute Fehlermeldungen beschreiben das Problem und zeigen die Lösung – ohne Fachjargon und direkt beim betroffenen Feld.",
+                example: "Statt 'Eingabe ungültig' zeigt OnlineFurniture: 'Bitte gib eine gültige E-Mail-Adresse ein, z.B. name@beispiel.de' – der Nutzer weiß genau, was zu tun ist.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Pflichtfeld",
+                explanation: "Eingabefeld, das ausgefüllt sein muss, bevor das Formular abgesendet werden kann. Wird standardmäßig mit einem Sternchen (*) markiert. Das Formular sollte erklären, was * bedeutet.",
+                example: "Im Checkout von VintageVibes sind Name, E-Mail und Lieferadresse mit * als Pflichtfelder markiert. Klickt der Nutzer auf 'Bestellen' ohne diese, wird er auf die leeren Felder hingewiesen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Hilfetext / Tooltip (Formular)",
+                explanation: "Zusätzliche Erklärung zu einem Formularfeld, die entweder dauerhaft unter dem Feld steht (Hilfetext) oder per Hover/Klick auf ein Info-Icon erscheint (Tooltip). Verhindert Fehleingaben durch proaktive Information.",
+                example: "Neben dem Feld 'Steuernummer' im EduSmart-Rechnungsformular erscheint ein ℹ-Icon. Per Hover öffnet ein Tooltip: 'Format: 13 Ziffern, zu finden auf deinem letzten Steuerbescheid.'",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Eingabemaske",
+                explanation: "Formatvorgabe für Eingabefelder, die die Eingabe automatisch in ein bestimmtes Format bringt. Verhindert Formatfehler und erleichtert die Eingabe strukturierter Daten wie Telefonnummern oder Datumsangaben.",
+                example: "Das Telefonfeld bei OnlineFurniture formatiert die Eingabe automatisch: Aus '01711234567' wird '+49 171 123 4567' – der Nutzer muss sich keine Gedanken über das Format machen.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Feldgruppierung",
+                explanation: "Verwandte Formularfelder werden visuell zusammengefasst (z.B. mit einem Rahmen, Abstand oder einer gemeinsamen Überschrift). Erleichtert die Orientierung und zeigt logische Zusammenhänge zwischen Feldern.",
+                example: "Das Bestellformular von OnlineFurniture gliedert sich in drei Gruppen: 'Persönliche Daten', 'Lieferadresse' und 'Zahlungsart' – jede Gruppe hat eine eigene Überschrift und wird durch einen Rahmen abgegrenzt.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Autocomplete (Formular)",
+                explanation: "Funktion, die Eingabevorschläge basierend auf früheren Eingaben oder hinterlegten Daten anzeigt. Spart Tippaufwand und reduziert Fehler. Wird per HTML-Attribut aktiviert und durch den Browser unterstützt.",
+                example: "Beim erneuten Besuch von VintageVibes füllt der Browser durch Autocomplete automatisch Name, E-Mail und Adresse aus – der Nutzer muss seine Daten nicht neu eingeben.",
+                categories: ["it"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Mehrstufiges Formular (Multi-Step Form)",
+                explanation: "Langes Formular wird in mehrere überschaubare Schritte aufgeteilt. Eine Fortschrittsanzeige zeigt dem Nutzer wo er steht. Reduziert die wahrgenommene Komplexität und senkt die Abbruchrate.",
+                example: "Der Checkout von OnlineFurniture ist dreistufig: Schritt 1 Adresse → Schritt 2 Versand → Schritt 3 Zahlung. Oben zeigt eine Leiste 'Schritt 2 von 3' – der Nutzer sieht das Ende.",
                 categories: ["it"],
                 box: 1,
                 correctCount: 0
@@ -1591,6 +1755,128 @@
                 explanation: "Speziell gestaltete Webseite, auf die Nutzer durch Marketing-Kampagnen geleitet werden, um eine bestimmte Aktion auszulösen.",
                 example: "SmartFit erstellt eine Landing Page für eine neue Fitness-Challenge, auf der sich Nutzer direkt anmelden können.",
                 categories: ["marketing", "it"],
+                box: 1,
+                correctCount: 0
+            },
+
+            // ==================== MARKETING: MARKENKATEGORIEN & MARKENARTEN ====================
+            {
+                term: "Herstellermarke",
+                explanation: "Marke, die vom produzierenden Unternehmen selbst entwickelt, besessen und vermarktet wird. Der Hersteller kontrolliert Qualität, Preis und Markenauftritt vollständig. Bekannteste Form der Marke im Konsumgüterbereich.",
+                example: "Coca-Cola, Nike und Apple sind klassische Herstellermarken: Das produzierende Unternehmen bestimmt Produktgestaltung, Preis und globale Markenkommunikation selbst.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Handelsmarke (Eigenmarke)",
+                explanation: "Marke, die vom Handelsunternehmen (Händler) entwickelt und exklusiv in seinen eigenen Filialen verkauft wird. Meist günstiger als Herstellermarken, da weniger Werbeaufwand. Auch als Eigenmarke oder Private Label bezeichnet.",
+                example: "REWE verkauft unter der Eigenmarke 'REWE Beste Wahl' eigene Produkte – günstigere Alternative zu Markenartikeln, die exklusiv in REWE-Filialen erhältlich sind.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Gattungsmarke",
+                explanation: "Ursprünglich eine Marke, die durch intensive Nutzung zum allgemeinen Oberbegriff für eine Produktkategorie geworden ist. Das Markenrecht kann dadurch geschwächt werden (Generizid).",
+                example: "Tempo (Taschentücher), Tesa (Klebeband) und Uhu (Klebstoff) sind ehemalige Markennamen, die im Volksmund zum Gattungsbegriff für die gesamte Produktkategorie wurden.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Dienstleistungsmarke",
+                explanation: "Marke für immaterielle Leistungen (Dienstleistungen) statt physischer Produkte. Da die Leistung nicht anfassbar ist, steht das Markenversprechen (Vertrauen, Qualität, Zuverlässigkeit) besonders im Vordergrund.",
+                example: "TÜV, Lufthansa und McKinsey sind Dienstleistungsmarken: Kunden können die Qualität vor dem Kauf nicht direkt prüfen – das Markenimage ist das entscheidende Kaufargument.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Globalmarke (Weltmarke)",
+                explanation: "Marke, die international in vielen Ländern mit weitgehend einheitlichem Markenauftritt und gleichem Produktversprechen vermarktet wird. Profitiert von Skaleneffekten in Produktion und Kommunikation.",
+                example: "Apple, Samsung und McDonald's sind Globalmarken: Logo, Farbwelt und Produktversprechen sind weltweit identisch, auch wenn lokale Anpassungen (z.B. Sprache) vorgenommen werden.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Einzelmarke (Monomarke)",
+                explanation: "Markenstrategie, bei der jedes Produkt unter einem eigenen, unabhängigen Markennamen geführt wird. Das Mutterunternehmen tritt nach außen kaum in Erscheinung. Vorteil: Misserfolg eines Produkts schadet anderen Marken nicht.",
+                example: "Procter & Gamble führt Ariel, Pampers und Gillette als eigenständige Einzelmarken – Konsumenten wissen oft nicht, dass alle drei vom selben Konzern stammen.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Familienmarke",
+                explanation: "Markenstrategie, bei der eine Gruppe verwandter Produkte unter einem gemeinsamen Markennamen geführt wird. Neue Produkte profitieren vom Image der bestehenden Marke (Imagetransfer).",
+                example: "Nivea ist eine klassische Familienmarke: Körperlotion, Deo, Shampoo und Rasierschaum tragen alle den Namen Nivea – Neuerungen profitieren sofort vom Vertrauen in die Marke.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Dachmarke (Unternehmensmarke)",
+                explanation: "Markenstrategie, bei der alle Produkte und Leistungen eines Unternehmens unter dem Unternehmensnamen als einheitliche Marke geführt werden. Das Unternehmen selbst ist die Marke.",
+                example: "Amazon und Google sind Dachmarken: Alle Produkte (Amazon Prime, Amazon Alexa, Google Maps, Google Drive) laufen unter dem Unternehmensnamen – die Corporate Brand trägt alles.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Premiummarke",
+                explanation: "Marke, die sich durch überdurchschnittliche Qualität, gehobenes Design und höhere Preisbereitschaft der Zielgruppe positioniert. Liegt zwischen Massenmarkt und Luxusmarke.",
+                example: "Miele (Hausgeräte) und Boss (Mode) sind Premiummarken: Deutlich teurer als Standardprodukte, aber für eine breite wohlhabende Mittelschicht erschwinglich – im Gegensatz zu echten Luxusmarken.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Luxusmarke",
+                explanation: "Marke mit extrem exklusiver Positionierung, sehr hohen Preisen, limitierter Verfügbarkeit und starkem Prestige-Image. Kauft man nicht primär wegen der Funktion, sondern wegen Status und Selbstdarstellung.",
+                example: "Rolex, Hermès und Rolls-Royce sind Luxusmarken: Bewusst knappe Produktion, nie im Ausverkauf, Wartelisten – die Exklusivität ist Teil des Produktes selbst.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Co-Branding",
+                explanation: "Kooperation zweier eigenständiger Marken für ein gemeinsames Produkt oder eine Kampagne. Beide Marken profitieren vom Image der anderen und erschließen neue Zielgruppen.",
+                example: "Nike und Apple kooperieren beim Apple Watch Nike: Nike bringt Sport-Credibility, Apple bringt Tech-Image – beide Marken gewinnen neue Kunden aus dem Umfeld der jeweils anderen.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Lizenzmarke",
+                explanation: "Marke, deren Name und Logo gegen Gebühr (Lizenzgebühr) von Dritten für eigene Produkte genutzt werden darf. Der Markeninhaber verggibt das Nutzungsrecht ohne selbst zu produzieren.",
+                example: "Disney lizenziert seine Markennamen und Figuren an Spielzeughersteller, Textilunternehmen und Lebensmittelproduzenten – diese zahlen Lizenzgebühren und nutzen das Disney-Image für ihre Produkte.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Individualmarke",
+                explanation: "Marke, die von einer einzelnen natürlichen oder juristischen Person für deren eigene Waren oder Dienstleistungen eingetragen wird. Die häufigste Form der Markeneintragung – der Inhaber allein entscheidet über Nutzung und Lizenzierung.",
+                example: "Creative Visions GmbH lässt ihren Firmennamen und ihr Logo als Individualmarke beim DPMA eintragen – nur das Unternehmen selbst darf diese Marke nutzen und darüber verfügen.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Gewährleistungsmarke",
+                explanation: "Marke, die bestimmte Eigenschaften, Qualitätsstandards oder geographische Herkunft von Waren und Dienstleistungen zertifiziert. Wird von einer neutralen Organisation vergeben, nicht vom Hersteller selbst.",
+                example: "Das Stiftung-Warentest-Siegel und der 'Blauer Engel' sind Gewährleistungsmarken: Sie garantieren Käufern, dass geprüfte Standards eingehalten werden – unabhängig vom Hersteller.",
+                categories: ["marketing"],
+                box: 1,
+                correctCount: 0
+            },
+            {
+                term: "Kollektivmarke",
+                explanation: "Marke, die von einem Verband oder einer Vereinigung für seine Mitglieder eingetragen wird. Alle Mitglieder dürfen die Marke nutzen, sofern sie die Satzungsbedingungen erfüllen. Kennzeichnet Zugehörigkeit zu einer Gruppe.",
+                example: "Das 'Woolmark'-Logo ist eine Kollektivmarke: Alle Textilhersteller, die Mitglied der Wollorganisation sind und reine Schurwolle verarbeiten, dürfen dieses Zeichen auf ihren Produkten verwenden.",
+                categories: ["marketing"],
                 box: 1,
                 correctCount: 0
             },

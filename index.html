@@ -493,6 +493,123 @@
             margin-top: 2rem;
         }
 
+        /* Mix-Button */
+        .mix-btn {
+            background: linear-gradient(135deg, #9c27b0, #e91e63);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: var(--shadow);
+            grid-column: 1 / -1;
+        }
+
+        .mix-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(156,39,176,0.35);
+        }
+
+        /* Lernschwächen-Analyse */
+        .weakness-section {
+            margin-top: 2rem;
+        }
+
+        .weakness-section h3 {
+            color: var(--danger-color);
+            margin-bottom: 1.25rem;
+        }
+
+        .weakness-subsection {
+            margin-bottom: 1.5rem;
+        }
+
+        .weakness-subsection h4 {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-weakness-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin: 0.45rem 0;
+        }
+
+        .weakness-bar-label {
+            width: 145px;
+            font-size: 0.82rem;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .weakness-bar-track {
+            flex: 1;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .weakness-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger-color), #ff7043);
+            border-radius: 5px;
+            transition: width 0.6s ease-out;
+        }
+
+        .weakness-bar-pct {
+            font-size: 0.78rem;
+            color: #888;
+            min-width: 3rem;
+            text-align: right;
+        }
+
+        .weakness-card-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            margin: 0.35rem 0;
+            font-size: 0.88rem;
+        }
+
+        .weakness-card-term {
+            flex: 1;
+        }
+
+        .weakness-badge {
+            background: var(--danger-color);
+            color: white;
+            padding: 0.15rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .weakness-badge.box-badge {
+            background: #ff9800;
+        }
+
+        .weakness-empty {
+            text-align: center;
+            color: var(--success-color);
+            padding: 1rem 0;
+            font-size: 0.95rem;
+        }
+
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -574,6 +691,7 @@
                 <button class="category-btn" data-category="personal">Personal</button>
                 <button class="category-btn" data-category="bwl">BWL & Kalkulation</button>
                 <button class="category-btn" data-category="qm">Qualitätsmanagement</button>
+                <button class="mix-btn" data-category="mix">🎲 Mix – 40 zufällige Karten (wechselt jede Session)</button>
             </div>
             <button id="importBtn" class="secondary-btn">📥 Import CSV</button>
         </div>
@@ -677,7 +795,18 @@
             </div>
             
             <canvas id="progressChart"></canvas>
-            
+
+            <div class="weakness-section">
+                <h3>🎯 Lernschwächen-Analyse</h3>
+                <div class="weakness-subsection">
+                    <h4>Schwächste Kategorien (Anteil Box 1–2)</h4>
+                    <div id="weaknessCategories"></div>
+                </div>
+                <div class="weakness-subsection">
+                    <div id="weaknessCards"></div>
+                </div>
+            </div>
+
             <button id="closeStats" class="primary-btn" onclick="showScreen('category')">Zurück</button>
         </div>
     </div>
@@ -2905,19 +3034,21 @@
         let wrongAnswers = 0;
 
         // Lokale Speicherung
+        let cardWrongCounts = {}; // { term: wrongCount } – persisted separately
+
         function saveToLocalStorage() {
             localStorage.setItem('flashcards', JSON.stringify(flashcards));
             localStorage.setItem('settings', JSON.stringify(appSettings));
             localStorage.setItem('sessionStats', JSON.stringify(overallStats));
+            localStorage.setItem('wrongCounts', JSON.stringify(cardWrongCounts));
         }
 
         function loadFromLocalStorage() {
             const savedCards = localStorage.getItem('flashcards');
             if (savedCards) {
                 const loadedCards = JSON.parse(savedCards);
-                // Merge loaded data into existing flashcards array
                 flashcards.forEach((card, index) => {
-                    if (loadedCards[index] && loadedCards[index].term === card.term) { // Check if term matches to avoid issues if card order changes
+                    if (loadedCards[index] && loadedCards[index].term === card.term) {
                         card.box = loadedCards[index].box;
                         card.correctCount = loadedCards[index].correctCount;
                     }
@@ -2933,6 +3064,11 @@
             const savedStats = localStorage.getItem('sessionStats');
             if (savedStats) {
                 overallStats = JSON.parse(savedStats);
+            }
+
+            const savedWrong = localStorage.getItem('wrongCounts');
+            if (savedWrong) {
+                cardWrongCounts = JSON.parse(savedWrong);
             }
         }
 
@@ -3118,8 +3254,8 @@
         const flashcardElement = document.getElementById('flashcard');
 
         // Event Listeners
-        document.querySelectorAll('.category-btn').forEach(button => {
-            button.addEventListener('click', (event) => startLearning(event.target.dataset.category));
+        document.querySelectorAll('.category-btn, .mix-btn').forEach(button => {
+            button.addEventListener('click', (event) => startLearning(event.currentTarget.dataset.category));
         });
         document.getElementById('flipBtn').addEventListener('click', toggleExplanation);
         document.getElementById('correctBtn').addEventListener('click', () => animateSwipe('right', markCorrect));
@@ -3177,6 +3313,7 @@
 
             if (screenId === 'stats') {
                 updateOverallStatsDisplay();
+                updateWeaknessAnalysis();
             } else if (screenId === 'settings') {
                 buildCardOverview();
             } else if (screenId === 'category') {
@@ -3198,22 +3335,53 @@
         }
 
 
+        // Weighted random selection: lower boxes appear more frequently
+        function getMixCards(count) {
+            const boxWeight = { 1: 5, 2: 4, 3: 3, 4: 2, 5: 1 };
+            const pool = [];
+            flashcards.forEach(card => {
+                const w = boxWeight[card.box] || 1;
+                for (let i = 0; i < w; i++) pool.push(card);
+            });
+            // Fisher-Yates shuffle
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            // Pick unique cards up to count
+            const seen = new Set();
+            const selected = [];
+            for (const card of pool) {
+                if (!seen.has(card.term)) {
+                    seen.add(card.term);
+                    selected.push(card);
+                    if (selected.length >= count) break;
+                }
+            }
+            return selected;
+        }
+
         function startLearning(category) {
             currentCategory = category;
-            let filtered = category === 'alle'
-                ? [...flashcards]
-                : flashcards.filter(card => card.categories.includes(category));
 
-            currentCards = filterCardsByBox(filtered); // Filter based on SM-2 intervals
+            if (category === 'mix') {
+                currentCards = getMixCards(40);
+            } else {
+                let filtered = category === 'alle'
+                    ? [...flashcards]
+                    : flashcards.filter(card => card.categories.includes(category));
+                currentCards = filterCardsByBox(filtered);
+            }
 
             if (currentCards.length === 0) {
-                alert(`Keine neuen Karten in dieser Kategorie (${category}) oder alle Karten sind in höheren Boxen und warten auf Wiederholung. Versuche es morgen wieder oder wähle 'Alle Begriffe'.`);
+                alert(`Keine Karten verfügbar. Versuche es morgen wieder oder wähle 'Alle Begriffe'.`);
                 showScreen('category');
                 return;
             }
 
-            // Sort by Box, then randomize within boxes to prioritize lower boxes but keep randomness
-            currentCards.sort((a, b) => a.box - b.box || Math.random() - 0.5);
+            if (category !== 'mix') {
+                currentCards.sort((a, b) => a.box - b.box || Math.random() - 0.5);
+            }
 
             currentIndex = 0;
             correctAnswers = 0;
@@ -3298,10 +3466,11 @@
             const card = currentCards[currentIndex];
             wrongAnswers++;
             overallStats.totalWrongAttempts++;
-            
-            card.box = 1; // Zurück zu Box 1
-            card.correctCount = 0; // Reset correct streak
-            card.lastReviewedDate = new Date().toISOString(); // Store review date
+
+            card.box = 1;
+            card.correctCount = 0;
+            card.lastReviewedDate = new Date().toISOString();
+            cardWrongCounts[card.term] = (cardWrongCounts[card.term] || 0) + 1;
 
             saveToLocalStorage();
             currentIndex++;
@@ -3489,6 +3658,96 @@
             const isOpen = body.classList.contains('open');
             body.classList.toggle('open', !isOpen);
             arrow.classList.toggle('open', !isOpen);
+        }
+
+        function updateWeaknessAnalysis() {
+            const catContainer = document.getElementById('weaknessCategories');
+            const cardContainer = document.getElementById('weaknessCards');
+            if (!catContainer || !cardContainer) return;
+
+            // Category weakness: % of cards in Box 1-2
+            const catStats = CATEGORIES.map(cat => {
+                const cards = flashcards.filter(c => c.categories.includes(cat.id));
+                if (cards.length === 0) return null;
+                const weak = cards.filter(c => c.box <= 2).length;
+                const pct = Math.round((weak / cards.length) * 100);
+                return { label: cat.label, weak, total: cards.length, pct };
+            }).filter(Boolean).sort((a, b) => b.pct - a.pct);
+
+            catContainer.innerHTML = '';
+            catStats.forEach(stat => {
+                const row = document.createElement('div');
+                row.className = 'category-weakness-row';
+
+                const label = document.createElement('span');
+                label.className = 'weakness-cat-label';
+                label.textContent = stat.label;
+                label.style.cssText = 'min-width:120px;font-size:0.85rem;';
+
+                const barWrap = document.createElement('div');
+                barWrap.className = 'weakness-bar';
+                barWrap.style.cssText = 'flex:1;background:#e0e0e0;border-radius:4px;height:12px;overflow:hidden;';
+
+                const fill = document.createElement('div');
+                fill.className = 'weakness-bar-fill';
+                fill.style.cssText = `width:${stat.pct}%;height:100%;border-radius:4px;`;
+
+                barWrap.appendChild(fill);
+
+                const pctLabel = document.createElement('span');
+                pctLabel.style.cssText = 'font-size:0.8rem;color:#666;min-width:48px;text-align:right;';
+                pctLabel.textContent = `${stat.pct}% (${stat.weak}/${stat.total})`;
+
+                row.appendChild(label);
+                row.appendChild(barWrap);
+                row.appendChild(pctLabel);
+                catContainer.appendChild(row);
+            });
+
+            // Top weak cards: highest wrong count or still in Box 1
+            const cardScores = flashcards.map(card => ({
+                term: card.term,
+                box: card.box,
+                wrong: cardWrongCounts[card.term] || 0,
+                score: (cardWrongCounts[card.term] || 0) * 2 + (card.box === 1 ? 3 : card.box === 2 ? 1 : 0)
+            })).filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
+
+            cardContainer.innerHTML = '';
+            if (cardScores.length === 0) {
+                const msg = document.createElement('p');
+                msg.style.cssText = 'color:#888;font-size:0.85rem;';
+                msg.textContent = 'Noch keine Schwächen erkannt – weiter lernen!';
+                cardContainer.appendChild(msg);
+                return;
+            }
+
+            const h4 = document.createElement('h4');
+            h4.textContent = 'Häufig falsch beantwortet';
+            h4.style.cssText = 'margin:1rem 0 0.5rem;color:var(--danger-color);';
+            cardContainer.appendChild(h4);
+
+            cardScores.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'category-weakness-row';
+                row.style.marginBottom = '0.3rem';
+
+                const term = document.createElement('span');
+                term.style.cssText = 'flex:1;font-size:0.85rem;';
+                term.textContent = item.term;
+
+                const badge = document.createElement('span');
+                badge.className = 'weakness-badge box-badge';
+                badge.textContent = `Box ${item.box}`;
+
+                const wrongBadge = document.createElement('span');
+                wrongBadge.style.cssText = 'font-size:0.75rem;color:var(--danger-color);min-width:60px;text-align:right;';
+                wrongBadge.textContent = item.wrong > 0 ? `${item.wrong}× falsch` : '';
+
+                row.appendChild(term);
+                row.appendChild(badge);
+                row.appendChild(wrongBadge);
+                cardContainer.appendChild(row);
+            });
         }
 
         // CSV Export/Import

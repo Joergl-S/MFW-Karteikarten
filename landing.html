@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medienfachwirt Lernkarten – Landingpage (Wireframe)</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --accent-color: #FF9800;
+            --bg-color: #f5f5f5;
+            --text-color: #333333;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --font-family: Arial, sans-serif;
+
+            /* Wireframe-Hilfsfarben: markieren Platzhalter-Bereiche */
+            --wf-border: #bbbbbb;
+            --wf-bg: #e9e9e9;
+            --wf-label-color: #999999;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* ===== Wireframe-Annotationen ===== */
+        .wf-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--wf-label-color);
+            border: 1px dashed var(--wf-border);
+            border-radius: 20px;
+            padding: 0.2rem 0.7rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* ===== Navigation ===== */
+        .navbar {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar .brand {
+            font-size: 1.1rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: none;
+            gap: 1.5rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .nav-cta {
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        /* ===== Allgemeine Section-Abstände ===== */
+        section, header.hero {
+            padding: 2.5rem 1.25rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        section h2 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-intro {
+            color: #666;
+            margin-bottom: 1.5rem;
+            max-width: 600px;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 1.8rem;
+            color: var(--text-color);
+            margin-bottom: 0.75rem;
+        }
+
+        .hero h1 span {
+            color: var(--primary-color);
+        }
+
+        .hero p {
+            color: #666;
+            max-width: 480px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .hero-ctas {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.9rem 1.8rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            width: 100%;
+            max-width: 280px;
+        }
+
+        /* ===== Hero-Animation ===== */
+        .hero-visual {
+            position: relative;
+            height: 260px;
+            margin: 2rem auto 1.5rem;
+            max-width: 320px;
+        }
+
+        .hero-flipcard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 190px;
+            margin: -95px 0 0 -75px;
+            perspective: 1000px;
+            z-index: 2;
+        }
+
+        .hero-flipcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            animation: heroFlip 6s ease-in-out infinite;
+        }
+
+        .hero-flipcard-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1rem;
+            font-weight: bold;
+        }
+
+        .hero-flipcard-front {
+            background: var(--card-bg);
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .hero-flipcard-back {
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: normal;
+            transform: rotateY(180deg);
+        }
+
+        @keyframes heroFlip {
+            0%, 40% { transform: rotateY(0deg); }
+            50%, 90% { transform: rotateY(180deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .hero-badge {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: var(--shadow);
+            animation: heroFloat 4s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .hero-badge.b1 { top: 0; left: 4%; animation-delay: 0s; }
+        .hero-badge.b2 { top: 8%; right: 2%; animation-delay: 1s; }
+        .hero-badge.b3 { bottom: 14%; left: -2%; animation-delay: 2s; }
+        .hero-badge.b4 { bottom: 0; right: 8%; animation-delay: 0.5s; }
+
+        @keyframes heroFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+        }
+
+        /* ===== Kategorien ===== */
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .category-icon {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.4rem;
+            font-size: 1.05rem;
+        }
+
+        .category-card p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+
+        .category-count {
+            display: inline-block;
+            background: var(--bg-color);
+            color: var(--primary-color);
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+        }
+
+        /* ===== Interaktive Karte (Platzhalter) ===== */
+        .map-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .map-filter-chip {
+            background: var(--card-bg);
+            border: 1px solid #ddd;
+            color: #666;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+        }
+
+        .map-filter-chip.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .map-placeholder {
+            border: 2px dashed var(--wf-border);
+            background: var(--wf-bg);
+            border-radius: 12px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--wf-label-color);
+            padding: 1.5rem;
+        }
+
+        .map-placeholder .map-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .map-placeholder strong {
+            color: #777;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* ===== Newsletter ===== */
+        .newsletter-section {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            margin: 0 auto;
+            max-width: 1100px;
+            text-align: center;
+        }
+
+        .newsletter-section .wf-label {
+            border-color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.85);
+        }
+
+        .newsletter-section h2 {
+            color: white;
+        }
+
+        .newsletter-section .section-intro {
+            color: rgba(255,255,255,0.85);
+            margin: 0 auto 1.5rem;
+        }
+
+        .newsletter-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .newsletter-form input[type="email"] {
+            padding: 0.9rem 1rem;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .newsletter-form button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.9rem 1rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .newsletter-consent {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            text-align: left;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .newsletter-consent input {
+            margin-top: 0.2rem;
+        }
+
+        .newsletter-success {
+            display: none;
+            margin-top: 1rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .newsletter-success.visible {
+            display: block;
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            text-align: center;
+            padding: 2rem 1.25rem;
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        footer .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+
+        footer a {
+            color: #999;
+            text-decoration: none;
+        }
+
+        /* ===== Responsive: Tablet ===== */
+        @media (min-width: 600px) {
+            .hero-ctas {
+                flex-direction: row;
+                justify-content: center;
+            }
+
+            .btn-primary, .btn-secondary {
+                width: auto;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .newsletter-form {
+                flex-direction: row;
+            }
+
+            .newsletter-form button {
+                flex-shrink: 0;
+            }
+
+            .map-placeholder {
+                min-height: 320px;
+            }
+        }
+
+        /* ===== Responsive: Desktop ===== */
+        @media (min-width: 900px) {
+            .nav-links {
+                display: flex;
+                align-items: center;
+            }
+
+            .hero {
+                display: grid;
+                grid-template-columns: 1.1fr 1fr;
+                align-items: center;
+                text-align: left;
+                gap: 2rem;
+            }
+
+            .hero-text {
+                text-align: left;
+            }
+
+            .hero h1 {
+                font-size: 2.4rem;
+            }
+
+            .hero p {
+                margin: 0 0 1.5rem;
+            }
+
+            .hero-ctas {
+                justify-content: flex-start;
+            }
+
+            .hero-visual {
+                height: 320px;
+                margin: 0 auto;
+                max-width: 380px;
+            }
+
+            .hero-flipcard {
+                width: 180px;
+                height: 230px;
+                margin: -115px 0 0 -90px;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ Navigation ============ -->
+    <nav class="navbar">
+        <span class="brand">📚 Medienfachwirt Lernkarten</span>
+        <div class="nav-links">
+            <a href="#kategorien">Kategorien</a>
+            <a href="#karte">Karte</a>
+            <a href="#newsletter">Newsletter</a>
+        </div>
+        <a href="index.html" class="nav-cta">App öffnen</a>
+    </nav>
+
+    <!-- ============ Hero ============ -->
+    <header class="hero">
+        <div class="hero-text">
+            <span class="wf-label">Wireframe – Hero mit Animation</span>
+            <h1>Lerne für deine <span>Medienfachwirt-Prüfung</span> – jederzeit, überall.</h1>
+            <p>Interaktive Karteikarten nach der Leitner-Methode: kostenlos, offline nutzbar und direkt im Browser. Wische, lerne, merke dir mehr.</p>
+            <div class="hero-ctas">
+                <a href="index.html" class="btn btn-primary">🚀 Jetzt kostenlos lernen</a>
+                <a href="#kategorien" class="btn btn-secondary">Kategorien entdecken</a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="hero-badge b1">⚖️</div>
+            <div class="hero-badge b2">💻</div>
+            <div class="hero-badge b3">📈</div>
+            <div class="hero-badge b4">🖨️</div>
+            <div class="hero-flipcard">
+                <div class="hero-flipcard-inner">
+                    <div class="hero-flipcard-face hero-flipcard-front">DSGVO</div>
+                    <div class="hero-flipcard-face hero-flipcard-back">Die Datenschutz-Grundverordnung regelt die Verarbeitung personenbezogener Daten in der EU.</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============ Kategorien ============ -->
+    <section id="kategorien">
+        <span class="wf-label">Wireframe – 4 Kategorien</span>
+        <h2>Wähle deinen Schwerpunkt</h2>
+        <p class="section-intro">Jede Kategorie deckt einen Prüfungsbereich ab – mit eigenem Fortschritt und Lernkarten nach dem Karteikasten-Prinzip.</p>
+        <div class="category-grid">
+            <div class="category-card">
+                <div class="category-icon">⚖️</div>
+                <h3>Recht &amp; Datenschutz</h3>
+                <p>DSGVO, Verträge, Wettbewerbs- &amp; Markenrecht</p>
+                <span class="category-count">25+ Karten</span>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">💻</div>
+                <h3>IT &amp; Digital</h3>
+                <p>Webtechnologien, Datenbanken, Frameworks</p>
+                <span class="category-count">30+ Karten</span>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">📈</div>
+                <h3>Marketing</h3>
+                <p>SEO, Branding, Wettbewerbsanalyse, KPIs</p>
+                <span class="category-count">20+ Karten</span>
+            </div>
+            <div class="category-card">
+                <div class="category-icon">🖨️</div>
+                <h3>Print &amp; Produktion</h3>
+                <p>Layout, Druckverfahren, Produktionsworkflow</p>
+                <span class="category-count">20+ Karten</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ Interaktive Karte (Platzhalter) ============ -->
+    <section id="karte">
+        <span class="wf-label">Wireframe – Platzhalter: Interaktive Karte</span>
+        <h2>Lerngruppen &amp; Prüfungsstandorte</h2>
+        <p class="section-intro">Finde IHK-Prüfungszentren, Lerngruppen und Online-Events in deiner Nähe – auf einer interaktiven Karte.</p>
+        <div class="map-filters">
+            <span class="map-filter-chip active">Alle</span>
+            <span class="map-filter-chip">IHK-Standorte</span>
+            <span class="map-filter-chip">Lerngruppen</span>
+            <span class="map-filter-chip">Online-Events</span>
+        </div>
+        <div class="map-placeholder">
+            <div class="map-icon">🗺️</div>
+            <strong>Interaktive Karte folgt</strong>
+            <span>Hier entsteht eine zoom- &amp; filterbare Karte mit Standort-Markern.</span>
+        </div>
+    </section>
+
+    <!-- ============ Newsletter ============ -->
+    <section class="newsletter-section" id="newsletter">
+        <span class="wf-label">Wireframe – Newsletter-Anmeldung</span>
+        <h2>Nichts mehr verpassen</h2>
+        <p class="section-intro">Neue Karteikarten-Sets, Lerntipps und Prüfungstermine bequem per E-Mail – jederzeit abbestellbar.</p>
+        <form class="newsletter-form" id="newsletterForm">
+            <input type="email" placeholder="deine@email.de" required aria-label="E-Mail-Adresse">
+            <button type="submit">Abonnieren</button>
+        </form>
+        <label class="newsletter-consent">
+            <input type="checkbox" required>
+            <span>Ich bin mit dem Erhalt des Newsletters einverstanden und kann mich jederzeit wieder abmelden (Datenschutzerklärung).</span>
+        </label>
+        <div class="newsletter-success" id="newsletterSuccess">
+            ✅ Danke! Bitte bestätige deine Anmeldung über den Link in der E-Mail.
+        </div>
+    </section>
+
+    <!-- ============ Footer ============ -->
+    <footer>
+        <div class="footer-links">
+            <a href="#">Impressum</a>
+            <a href="#">Datenschutz</a>
+            <a href="#">Kontakt</a>
+        </div>
+        <p>&copy; 2026 Medienfachwirt Lernkarten</p>
+    </footer>
+
+    <script>
+        document.getElementById('newsletterForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            document.getElementById('newsletterSuccess').classList.add('visible');
+            this.reset();
+        });
+    </script>
+</body>
+</html>

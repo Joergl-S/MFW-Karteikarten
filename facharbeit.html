@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fachgespräch-Trainer – Facharbeit</title>
+<style>
+    :root {
+        --primary-color: #2196F3;
+        --success-color: #4CAF50;
+        --danger-color: #f44336;
+        --warning-color: #FF9800;
+        --bg-color: #f5f5f5;
+        --text-color: #333333;
+        --muted-color: #666666;
+        --card-bg: #ffffff;
+        --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        --font-family: Arial, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: var(--font-family);
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        padding-bottom: 40px;
+    }
+
+    .navbar {
+        background: var(--primary-color);
+        color: white;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .navbar h1 { font-size: 1.3rem; }
+
+    .icon-btn {
+        background: transparent;
+        border: none;
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 0.4rem 0.6rem;
+        border-radius: 50%;
+        transition: background 0.3s;
+        color: white;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .container { max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+
+    .screen { display: none; animation: fadeIn 0.3s; }
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    h2 { color: var(--primary-color); margin-bottom: 1rem; }
+    p.lead { color: var(--muted-color); margin-bottom: 1.5rem; }
+
+    .card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    label { display: block; font-weight: bold; margin-bottom: 0.4rem; margin-top: 1rem; }
+    label:first-child { margin-top: 0; }
+
+    input[type="text"], input[type="password"], input[type="file"], select, textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .radio-group { display: flex; gap: 1rem; margin-top: 0.4rem; flex-wrap: wrap; }
+    .radio-option {
+        flex: 1;
+        min-width: 180px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        padding: 0.8rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .radio-option.selected { border-color: var(--primary-color); background: #e3f2fd; }
+    .radio-option input { width: auto; margin-right: 0.5rem; }
+
+    .key-row { display: flex; gap: 0.5rem; }
+    .key-row input { flex: 1; }
+    .key-row button { flex-shrink: 0; }
+
+    .btn {
+        display: inline-block;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.6rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 1.5rem;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-2px); }
+    .btn:disabled { background: #bbb; cursor: not-allowed; }
+    .btn.secondary { background: white; color: var(--primary-color); border: 2px solid var(--primary-color); }
+    .btn.ghost { background: transparent; color: var(--muted-color); border: 2px solid #ddd; }
+    .btn.small { padding: 0.5rem 1rem; font-size: 0.9rem; margin-top: 0; }
+
+    .btn-row { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; }
+
+    .hint { font-size: 0.85rem; color: var(--muted-color); margin-top: 0.4rem; }
+    .hint a { color: var(--primary-color); }
+
+    .file-drop {
+        border: 2px dashed #bbb;
+        border-radius: 10px;
+        padding: 2rem 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--muted-color);
+    }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--primary-color); background: #e3f2fd; }
+    .file-drop.has-file { border-color: var(--success-color); background: #e8f5e9; color: var(--text-color); }
+
+    .slider-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.4rem; }
+    .slider-row input[type="range"] { flex: 1; }
+    .slider-value { font-weight: bold; color: var(--primary-color); min-width: 2.5rem; text-align: center; }
+
+    .error-box {
+        background: #ffebee;
+        border: 1px solid var(--danger-color);
+        color: #b71c1c;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+        display: none;
+        white-space: pre-wrap;
+        font-size: 0.9rem;
+    }
+    .error-box.show { display: block; }
+
+    /* Loading */
+    .spinner {
+        width: 50px; height: 50px;
+        border: 5px solid #e0e0e0;
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        margin: 2rem auto;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loadingStatus { text-align: center; color: var(--muted-color); }
+
+    /* Progress */
+    .progress-bar {
+        background: #e0e0e0;
+        height: 26px;
+        border-radius: 13px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    .progress-fill {
+        background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+        height: 100%;
+        transition: width 0.4s;
+        width: 0%;
+    }
+    #progressText {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold; color: #333; font-size: 0.85rem;
+    }
+
+    /* Category pill */
+    .pill {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .question-text { font-size: 1.15rem; font-weight: bold; margin-bottom: 1rem; }
+
+    .sample-answer {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f1f8f4;
+        border-left: 4px solid var(--success-color);
+        border-radius: 6px;
+        display: none;
+    }
+    .sample-answer.show { display: block; animation: fadeIn 0.3s; }
+    .sample-answer h4 { color: var(--success-color); margin-bottom: 0.5rem; }
+
+    .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 0.8rem; }
+
+    /* Overview */
+    .overview-item {
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        padding: 0.9rem 0;
+    }
+    .overview-item:last-child { border-bottom: none; }
+    .overview-item .oq { font-weight: bold; }
+    .overview-item .oa { display: none; margin-top: 0.6rem; color: var(--muted-color); }
+    .overview-item .oa.show { display: block; }
+    .overview-item .own {
+        margin-top: 0.5rem; padding: 0.6rem; background: #fafafa; border-radius: 6px; font-style: italic; font-size: 0.9rem;
+    }
+
+    footer { text-align: center; color: var(--muted-color); font-size: 0.8rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🎓 Fachgespräch-Trainer</h1>
+    <button class="icon-btn" id="settingsBtn" title="API-Einstellungen">⚙️</button>
+</div>
+
+<div class="container">
+
+    <!-- SETUP SCREEN -->
+    <div class="screen" id="setupScreen">
+        <h2>KI-Zugang einrichten</h2>
+        <p class="lead">Um deine Facharbeit zu analysieren, braucht die App Zugriff auf eine KI. Dafür gibst du hier einmalig deinen eigenen API-Key ein.</p>
+        <div class="card">
+            <form id="setupForm">
+                <label>Anbieter</label>
+                <div class="radio-group">
+                    <label class="radio-option" id="optAnthropic">
+                        <input type="radio" name="provider" value="anthropic" checked> Anthropic (Claude)
+                    </label>
+                    <label class="radio-option" id="optOpenai">
+                        <input type="radio" name="provider" value="openai"> OpenAI (GPT)
+                    </label>
+                </div>
+
+                <label for="apiKeyInput">API-Key</label>
+                <div class="key-row">
+                    <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off" required>
+                    <button type="button" class="btn secondary small" id="toggleKeyBtn">Anzeigen</button>
+                </div>
+                <p class="hint">
+                    Anthropic-Key: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> ·
+                    OpenAI-Key: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a><br>
+                    Der Key wird ausschließlich lokal in deinem Browser gespeichert und nur direkt an den gewählten Anbieter gesendet.
+                </p>
+
+                <label for="modelInput">Modell</label>
+                <input type="text" id="modelInput" placeholder="claude-sonnet-5">
+                <p class="hint">Voreinstellung passt automatisch, kann bei Bedarf angepasst werden.</p>
+
+                <div class="btn-row">
+                    <button type="submit" class="btn">Speichern &amp; weiter</button>
+                    <button type="button" class="btn ghost" id="setupCancelBtn" style="display:none;">Abbrechen</button>
+                </div>
+                <div class="error-box" id="setupError"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- UPLOAD SCREEN -->
+    <div class="screen" id="uploadScreen">
+        <h2>Facharbeit hochladen</h2>
+        <p class="lead">Lade deine Facharbeit als PDF hoch. Die KI liest den Text, erkennt technische Entscheidungen und erstellt gezielte Prüfungsfragen samt Musterantworten für dein Fachgespräch.</p>
+        <div class="card">
+            <label>PDF-Datei</label>
+            <div class="file-drop" id="fileDrop">
+                <div id="fileDropText">📄 Klicken oder Datei hierher ziehen</div>
+                <input type="file" id="fileInput" accept="application/pdf" style="display:none;">
+            </div>
+
+            <label>Anzahl Fragen</label>
+            <div class="slider-row">
+                <input type="range" id="numQuestions" min="6" max="20" value="12">
+                <span class="slider-value" id="numQuestionsValue">12</span>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn" id="analyzeBtn" disabled>Facharbeit analysieren</button>
+            </div>
+            <div class="error-box" id="uploadError"></div>
+        </div>
+    </div>
+
+    <!-- LOADING SCREEN -->
+    <div class="screen" id="loadingScreen">
+        <div class="card">
+            <div class="spinner"></div>
+            <div id="loadingStatus">Wird verarbeitet …</div>
+        </div>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div class="screen" id="quizScreen">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+            <span id="progressText">1 / 12</span>
+        </div>
+        <div class="card">
+            <span class="pill" id="categoryPill">Kategorie</span>
+            <div class="question-text" id="questionText">Frage …</div>
+
+            <label for="ownAnswer">Deine Antwort (frei formulieren, nur für dich sichtbar)</label>
+            <textarea id="ownAnswer" placeholder="Formuliere hier laut oder schriftlich deine Antwort, bevor du die Musterantwort ansiehst …"></textarea>
+
+            <div class="btn-row">
+                <button class="btn secondary" id="revealBtn">Musterantwort anzeigen</button>
+            </div>
+
+            <div class="sample-answer" id="sampleAnswerBox">
+                <h4>Musterantwort</h4>
+                <div id="sampleAnswerText"></div>
+            </div>
+
+            <div class="nav-row">
+                <button class="btn ghost" id="prevBtn">← Zurück</button>
+                <button class="btn" id="nextBtn">Weiter →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERVIEW SCREEN -->
+    <div class="screen" id="overviewScreen">
+        <h2>Alle Fragen im Überblick</h2>
+        <p class="lead" id="overviewSubtitle"></p>
+        <div class="card" id="overviewList"></div>
+        <div class="btn-row">
+            <button class="btn" id="restartQuizBtn">Nochmal üben</button>
+            <button class="btn secondary" id="newUploadBtn">Neue Facharbeit hochladen</button>
+        </div>
+    </div>
+
+    <footer>Fachgespräch-Trainer · Analyse läuft direkt in deinem Browser, dein PDF wird nicht auf einen Server hochgeladen.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const LS_SETTINGS = 'fg_settings_v1';
+const LS_SESSION = 'fg_session_v1';
+const MAX_CHARS = 100000;
+
+const DEFAULT_MODELS = {
+    anthropic: 'claude-sonnet-5',
+    openai: 'gpt-4o'
+};
+
+const CATEGORY_COLORS = {
+    'Technische Alternative': '#2196F3',
+    'Begründung': '#9C27B0',
+    'Vertiefung': '#009688',
+    'Kritische Reflexion': '#FF9800'
+};
+
+let selectedFile = null;
+let currentIndex = 0;
+
+// ---------- Storage helpers ----------
+function getSettings() {
+    try { return JSON.parse(localStorage.getItem(LS_SETTINGS)) || null; }
+    catch { return null; }
+}
+function saveSettings(s) { localStorage.setItem(LS_SETTINGS, JSON.stringify(s)); }
+
+function getSession() {
+    try { return JSON.parse(localStorage.getItem(LS_SESSION)) || null; }
+    catch { return null; }
+}
+function saveSession(s) { localStorage.setItem(LS_SESSION, JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem(LS_SESSION); }
+
+// ---------- Screen handling ----------
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ---------- Setup screen ----------
+const setupForm = document.getElementById('setupForm');
+const apiKeyInput = document.getElementById('apiKeyInput');
+const modelInput = document.getElementById('modelInput');
+const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+const setupError = document.getElementById('setupError');
+const optAnthropic = document.getElementById('optAnthropic');
+const optOpenai = document.getElementById('optOpenai');
+
+function updateProviderVisual() {
+    const provider = setupForm.provider.value;
+    optAnthropic.classList.toggle('selected', provider === 'anthropic');
+    optOpenai.classList.toggle('selected', provider === 'openai');
+    if (!modelInput.dataset.userEdited) {
+        modelInput.value = DEFAULT_MODELS[provider];
+    }
+    modelInput.placeholder = DEFAULT_MODELS[provider];
+}
+document.querySelectorAll('input[name="provider"]').forEach(r => r.addEventListener('change', updateProviderVisual));
+modelInput.addEventListener('input', () => { modelInput.dataset.userEdited = '1'; });
+
+toggleKeyBtn.addEventListener('click', () => {
+    const show = apiKeyInput.type === 'password';
+    apiKeyInput.type = show ? 'text' : 'password';
+    toggleKeyBtn.textContent = show ? 'Verbergen' : 'Anzeigen';
+});
+
+document.getElementById('settingsBtn').addEventListener('click', () => {
+    const s = getSettings();
+    if (s) {
+        document.querySelector(`input[name="provider"][value="${s.provider}"]`).checked = true;
+        apiKeyInput.value = s.apiKey;
+        modelInput.value = s.model;
+        modelInput.dataset.userEdited = '1';
+        document.getElementById('setupCancelBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('setupCancelBtn').style.display = 'none';
+    }
+    updateProviderVisual();
+    showScreen('setupScreen');
+});
+
+document.getElementById('setupCancelBtn').addEventListener('click', () => {
+    const session = getSession();
+    showScreen(session && session.questions && session.questions.length ? 'quizScreen' : 'uploadScreen');
+});
+
+setupForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    setupError.classList.remove('show');
+    const provider = setupForm.provider.value;
+    const apiKey = apiKeyInput.value.trim();
+    const model = modelInput.value.trim() || DEFAULT_MODELS[provider];
+    if (!apiKey) {
+        setupError.textContent = 'Bitte gib einen API-Key ein.';
+        setupError.classList.add('show');
+        return;
+    }
+    saveSettings({ provider, apiKey, model });
+    const session = getSession();
+    showScreen(session && session.questions && session.questions.length ? 'quizScreen' : 'uploadScreen');
+    if (session && session.questions && session.questions.length) renderQuiz(currentIndex);
+});
+
+// ---------- Upload screen ----------
+const fileDrop = document.getElementById('fileDrop');
+const fileInput = document.getElementById('fileInput');
+const fileDropText = document.getElementById('fileDropText');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const uploadError = document.getElementById('uploadError');
+const numQuestions = document.getElementById('numQuestions');
+const numQuestionsValue = document.getElementById('numQuestionsValue');
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', (e) => { e.preventDefault(); fileDrop.classList.add('dragover'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('dragover'));
+fileDrop.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileDrop.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+    if (file.type !== 'application/pdf') {
+        uploadError.textContent = 'Bitte lade eine PDF-Datei hoch.';
+        uploadError.classList.add('show');
+        return;
+    }
+    uploadError.classList.remove('show');
+    selectedFile = file;
+    fileDrop.classList.add('has-file');
+    fileDropText.textContent = `✅ ${file.name}`;
+    analyzeBtn.disabled = false;
+}
+
+numQuestions.addEventListener('input', () => { numQuestionsValue.textContent = numQuestions.value; });
+
+analyzeBtn.addEventListener('click', runAnalysis);
+
+async function runAnalysis() {
+    const settings = getSettings();
+    if (!settings) { showScreen('setupScreen'); return; }
+    uploadError.classList.remove('show');
+    showScreen('loadingScreen');
+    setLoadingStatus('📄 Text wird aus dem PDF extrahiert …');
+    try {
+        const { text, truncated } = await extractPdfText(selectedFile);
+        if (!text.trim()) throw new Error('Aus der PDF konnte kein Text extrahiert werden. Ist es ein gescanntes Dokument ohne Textebene?');
+
+        setLoadingStatus('🤖 Facharbeit wird analysiert und Fragen werden erstellt … (kann bis zu einer Minute dauern)');
+        const prompt = buildPrompt(text, parseInt(numQuestions.value, 10), truncated);
+        const raw = await callLLM(settings, prompt);
+        const questions = parseQuestions(raw);
+
+        saveSession({
+            fileName: selectedFile.name,
+            questions,
+            answers: {},
+            createdAt: Date.now()
+        });
+        currentIndex = 0;
+        renderQuiz(0);
+        showScreen('quizScreen');
+    } catch (err) {
+        showScreen('uploadScreen');
+        uploadError.textContent = 'Fehler: ' + err.message;
+        uploadError.classList.add('show');
+    }
+}
+
+function setLoadingStatus(msg) { document.getElementById('loadingStatus').textContent = msg; }
+
+// ---------- PDF extraction ----------
+async function extractPdfText(file) {
+    if (!window.pdfjsLib) throw new Error('Die PDF-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen und die Seite neu laden.');
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(it => it.str).join(' ') + '\n\n';
+        if (text.length > MAX_CHARS) break;
+    }
+    const truncated = text.length > MAX_CHARS;
+    return { text: text.slice(0, MAX_CHARS), truncated };
+}
+
+// ---------- Prompt & LLM ----------
+function buildPrompt(text, count, truncated) {
+    return `Du bist ein erfahrener Prüfer und bereitest eine Schülerin/einen Schüler auf das mündliche Fachgespräch zur folgenden Facharbeit vor. Im Fachgespräch wird geprüft, ob der Prüfling die eigene Arbeit wirklich durchdrungen hat – insbesondere warum bestimmte fachliche bzw. technische Entscheidungen getroffen wurden, welche Alternativen es dazu gegeben hätte, und ob Vor- und Nachteile reflektiert wurden.
+
+Hier ist der Volltext der Facharbeit${truncated ? ' (aus Platzgründen gekürzt, es liegt nur der Anfang vor)' : ''}:
+"""
+${text}
+"""
+
+Erstelle genau ${count} Prüfungsfragen für das Fachgespräch. Beziehe dich konkret auf Inhalte, Fachbegriffe, Methoden, Werkzeuge oder Technologien, die tatsächlich in der Arbeit vorkommen – keine generischen Fragen. Verteile die Fragen sinnvoll über folgende Kategorien:
+- "Technische Alternative": frage nach einer im Text nicht gewählten Alternative (Technologie, Methode, Vorgehen, Werkzeug) und was dafür bzw. dagegen gesprochen hätte.
+- "Begründung": frage gezielt "Warum haben Sie sich für … entschieden?" zu einer konkreten, im Text erkennbaren Entscheidung.
+- "Vertiefung": frage nach einem zentralen Fachbegriff oder Konzept der Arbeit, das genauer erklärt werden soll.
+- "Kritische Reflexion": frage nach Grenzen, Schwächen der gewählten Lösung oder was man rückblickend anders machen würde.
+
+Gib zu jeder Frage eine fundierte Musterantwort, die sich auf den Inhalt der Arbeit stützt und bei Bedarf um Fachwissen zu Alternativen ergänzt wird, sodass sie als Lernhilfe zum Üben taugt. Die Musterantwort soll wie eine gute mündliche Antwort klingen, 3-6 Sätze lang.
+
+Antworte AUSSCHLIESSLICH mit einem JSON-Array (keine Code-Fences, kein weiterer Text, kein Vor- oder Nachwort) in exakt diesem Format:
+[{"category":"Technische Alternative","question":"...","sampleAnswer":"..."}]`;
+}
+
+async function callLLM(settings, prompt) {
+    if (settings.provider === 'anthropic') {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'x-api-key': settings.apiKey,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+                model: settings.model,
+                max_tokens: 4096,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+        if (!res.ok) throw new Error(`Anthropic-API (${res.status}): ${(await res.text()).slice(0, 300)}`);
+        const data = await res.json();
+        return (data.content || []).map(b => b.text || '').join('');
+    } else {
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                'Authorization': `Bearer ${settings.apiKey}`
+            },
+            body: JSON.stringify({
+                model: settings.model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7
+            })
+        });
+        if (!res.ok) throw new Error(`OpenAI-API (${res.status}): ${(await res.text()).slice(0, 300)}`);
+        const data = await res.json();
+        return data.choices[0].message.content;
+    }
+}
+
+function parseQuestions(raw) {
+    const start = raw.indexOf('[');
+    const end = raw.lastIndexOf(']');
+    if (start === -1 || end === -1) throw new Error('Die KI-Antwort enthielt kein erkennbares JSON. Bitte erneut versuchen.');
+    let parsed;
+    try {
+        parsed = JSON.parse(raw.slice(start, end + 1));
+    } catch (e) {
+        throw new Error('Die KI-Antwort konnte nicht gelesen werden (ungültiges JSON). Bitte erneut versuchen.');
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('Es wurden keine Fragen generiert.');
+    return parsed.map(q => ({
+        category: q.category || 'Frage',
+        question: q.question || '',
+        sampleAnswer: q.sampleAnswer || ''
+    })).filter(q => q.question);
+}
+
+// ---------- Quiz screen ----------
+const progressFill = document.getElementById('progressFill');
+const progressText = document.getElementById('progressText');
+const categoryPill = document.getElementById('categoryPill');
+const questionText = document.getElementById('questionText');
+const ownAnswer = document.getElementById('ownAnswer');
+const revealBtn = document.getElementById('revealBtn');
+const sampleAnswerBox = document.getElementById('sampleAnswerBox');
+const sampleAnswerText = document.getElementById('sampleAnswerText');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+function renderQuiz(index) {
+    const session = getSession();
+    if (!session || !session.questions.length) { showScreen('uploadScreen'); return; }
+    currentIndex = Math.max(0, Math.min(index, session.questions.length - 1));
+    const q = session.questions[currentIndex];
+    const total = session.questions.length;
+
+    progressFill.style.width = `${((currentIndex + 1) / total) * 100}%`;
+    progressText.textContent = `${currentIndex + 1} / ${total}`;
+
+    categoryPill.textContent = q.category;
+    categoryPill.style.background = CATEGORY_COLORS[q.category] || '#607D8B';
+    questionText.textContent = q.question;
+
+    ownAnswer.value = (session.answers && session.answers[currentIndex]) || '';
+    sampleAnswerBox.classList.remove('show');
+    sampleAnswerText.textContent = q.sampleAnswer;
+
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.textContent = currentIndex === total - 1 ? 'Zur Übersicht →' : 'Weiter →';
+}
+
+function persistOwnAnswer() {
+    const session = getSession();
+    if (!session) return;
+    session.answers = session.answers || {};
+    session.answers[currentIndex] = ownAnswer.value;
+    saveSession(session);
+}
+
+revealBtn.addEventListener('click', () => sampleAnswerBox.classList.add('show'));
+
+prevBtn.addEventListener('click', () => {
+    persistOwnAnswer();
+    renderQuiz(currentIndex - 1);
+});
+
+nextBtn.addEventListener('click', () => {
+    persistOwnAnswer();
+    const session = getSession();
+    if (currentIndex === session.questions.length - 1) {
+        renderOverview();
+        showScreen('overviewScreen');
+    } else {
+        renderQuiz(currentIndex + 1);
+    }
+});
+
+// ---------- Overview screen ----------
+function renderOverview() {
+    const session = getSession();
+    document.getElementById('overviewSubtitle').textContent = `${session.fileName} · ${session.questions.length} Fragen`;
+    const list = document.getElementById('overviewList');
+    list.innerHTML = '';
+    session.questions.forEach((q, i) => {
+        const item = document.createElement('div');
+        item.className = 'overview-item';
+        const ownText = (session.answers && session.answers[i]) ? `<div class="own">Deine Antwort: ${escapeHtml(session.answers[i])}</div>` : '';
+        item.innerHTML = `
+            <span class="pill" style="background:${CATEGORY_COLORS[q.category] || '#607D8B'}">${escapeHtml(q.category)}</span>
+            <div class="oq">${escapeHtml(q.question)}</div>
+            ${ownText}
+            <div class="oa">${escapeHtml(q.sampleAnswer)}</div>
+        `;
+        item.addEventListener('click', () => item.querySelector('.oa').classList.toggle('show'));
+        list.appendChild(item);
+    });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+document.getElementById('restartQuizBtn').addEventListener('click', () => {
+    renderQuiz(0);
+    showScreen('quizScreen');
+});
+
+document.getElementById('newUploadBtn').addEventListener('click', () => {
+    clearSession();
+    selectedFile = null;
+    fileInput.value = '';
+    fileDrop.classList.remove('has-file');
+    fileDropText.textContent = '📄 Klicken oder Datei hierher ziehen';
+    analyzeBtn.disabled = true;
+    showScreen('uploadScreen');
+});
+
+// ---------- Init ----------
+(function init() {
+    updateProviderVisual();
+    const settings = getSettings();
+    if (!settings) {
+        showScreen('setupScreen');
+        return;
+    }
+    const session = getSession();
+    if (session && session.questions && session.questions.length) {
+        renderQuiz(0);
+        showScreen('quizScreen');
+    } else {
+        showScreen('uploadScreen');
+    }
+})();
+</script>
+</body>
+</html>

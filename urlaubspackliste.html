@@ -182,6 +182,18 @@
   tr.dragging td {
     opacity: 0.85;
   }
+  tr.cat-header td {
+    background: #eef5fc;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--blue-dark);
+    text-align: left;
+    padding: 8px 10px;
+  }
+  .cat-count {
+    font-weight: normal;
+    color: var(--text-light);
+  }
   .item-meta {
     font-size: 0.7rem;
     color: var(--text-light);
@@ -191,13 +203,23 @@
     display: flex;
     gap: 8px;
     padding: 14px 16px;
+    flex-wrap: wrap;
   }
   .add-form input[type="text"] {
     flex: 1;
+    min-width: 140px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 1rem;
+  }
+  .add-form select {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: white;
+    max-width: 160px;
   }
   .add-form button {
     background: var(--blue);
@@ -291,6 +313,7 @@
       Noch nichts auf der Liste. Füg unten den ersten Gegenstand hinzu!
     </div>
     <form class="add-form" id="add-form">
+      <select id="new-category" title="Kategorie"></select>
       <input type="text" id="new-item" placeholder="z.B. Sonnencreme" autocomplete="off" required>
       <button type="submit">Hinzufügen</button>
     </form>
@@ -341,6 +364,17 @@
     t4: "Reisende 4"
   };
 
+  const CATEGORIES = [
+    { id: "kleidung", label: "👕 Kleidung" },
+    { id: "unterlagen", label: "🛂 Reiseunterlagen" },
+    { id: "apotheke", label: "💊 Apotheke" },
+    { id: "technik", label: "🔌 Technik" },
+    { id: "strand", label: "🏖️ Strand & Freizeit" },
+    { id: "sonstiges", label: "📦 Sonstiges" }
+  ];
+  const DEFAULT_CATEGORY = "sonstiges";
+  const CATEGORY_IDS = CATEGORIES.map(function (c) { return c.id; });
+
   const statusEl = document.getElementById("status");
   const setupNotice = document.getElementById("setup-notice");
   const appEl = document.getElementById("app");
@@ -364,10 +398,19 @@
   const emptyState = document.getElementById("empty-state");
   const progressCard = document.getElementById("progress-card");
   const myNameInput = document.getElementById("my-name");
+  const categorySelect = document.getElementById("new-category");
 
   myNameInput.value = localStorage.getItem("packliste-mein-name") || "";
   myNameInput.addEventListener("change", function () {
     localStorage.setItem("packliste-mein-name", myNameInput.value.trim());
+  });
+
+  categorySelect.innerHTML = CATEGORIES.map(function (c) {
+    return '<option value="' + c.id + '">' + escapeHtml(c.label) + '</option>';
+  }).join("");
+  categorySelect.value = localStorage.getItem("packliste-letzte-kategorie") || DEFAULT_CATEGORY;
+  categorySelect.addEventListener("change", function () {
+    localStorage.setItem("packliste-letzte-kategorie", categorySelect.value);
   });
 
   function escapeHtml(str) {
@@ -423,21 +466,49 @@
     });
   }
 
-  function migrateMissingOrder() {
+  function categoryOf(item) {
+    return item.category && CATEGORY_IDS.indexOf(item.category) !== -1 ? item.category : DEFAULT_CATEGORY;
+  }
+
+  function migrateLegacyFields() {
     const ids = sortedItemIds();
-    const missing = ids.some(function (id) { return typeof items[id].order !== "number"; });
-    if (!missing) return;
     const updates = {};
-    ids.forEach(function (id, idx) { updates[id + "/order"] = idx; });
-    itemsRef.update(updates);
+    let needsUpdate = false;
+    ids.forEach(function (id, idx) {
+      if (typeof items[id].order !== "number") {
+        updates[id + "/order"] = idx;
+        needsUpdate = true;
+      }
+      if (items[id].category !== categoryOf(items[id])) {
+        updates[id + "/category"] = categoryOf(items[id]);
+        needsUpdate = true;
+      }
+    });
+    if (needsUpdate) itemsRef.update(updates);
+  }
+
+  function groupedItemIds() {
+    const ids = sortedItemIds();
+    const groups = {};
+    CATEGORY_IDS.forEach(function (cid) { groups[cid] = []; });
+    ids.forEach(function (id) {
+      groups[categoryOf(items[id])].push(id);
+    });
+    return groups;
   }
 
   let dragState = null;
 
   function persistOrderFromDom() {
-    const ids = Array.from(itemRows.children).map(function (tr) { return tr.getAttribute("data-id"); });
     const updates = {};
-    ids.forEach(function (id, idx) { updates[id + "/order"] = idx; });
+    const counters = {};
+    Array.from(itemRows.querySelectorAll("tr[data-id]")).forEach(function (tr) {
+      const id = tr.getAttribute("data-id");
+      const cat = tr.getAttribute("data-category");
+      const idx = counters[cat] || 0;
+      updates[id + "/order"] = idx;
+      counters[cat] = idx + 1;
+    });
     itemsRef.update(updates);
   }
 
@@ -454,8 +525,10 @@
     if (!dragState || e.pointerId !== dragState.pointerId) return;
     const tr = itemRows.querySelector('tr[data-id="' + dragState.id + '"]');
     if (!tr) return;
+    const category = tr.getAttribute("data-category");
     const y = e.clientY;
-    const rows = Array.from(itemRows.children).filter(function (r) { return r !== tr; });
+    const rows = Array.from(itemRows.querySelectorAll('tr[data-category="' + category + '"]'))
+      .filter(function (r) { return r !== tr; });
     for (let i = 0; i < rows.length; i++) {
       const rect = rows[i].getBoundingClientRect();
       const mid = rect.top + rect.height / 2;
@@ -464,7 +537,9 @@
         return;
       }
     }
-    itemRows.appendChild(tr);
+    if (rows.length) {
+      itemRows.insertBefore(tr, rows[rows.length - 1].nextSibling);
+    }
   }
 
   function onHandlePointerUp(e) {
@@ -475,33 +550,45 @@
     persistOrderFromDom();
   }
 
-  function renderItems() {
-    const itemIds = sortedItemIds();
+  function renderItemRow(id) {
+    const item = items[id];
+    const checked = item.checked || {};
+    const allChecked = TRAVELER_IDS.every(function (tid) { return !!checked[tid]; });
+    const cells = TRAVELER_IDS.map(function (tid) {
+      return '<td><input type="checkbox" data-item="' + id + '" data-traveler="' + tid + '" ' +
+        (checked[tid] ? "checked" : "") + '></td>';
+    }).join("");
+    const meta = item.addedBy ? '<div class="item-meta">von ' + escapeHtml(item.addedBy) + '</div>' : "";
+    return '<tr data-id="' + id + '" data-category="' + categoryOf(item) + '">' +
+      '<td class="drag-col"><span class="drag-handle" title="Ziehen zum Umsortieren">⠿</span></td>' +
+      '<td class="item-col"><span class="item-text' + (allChecked ? ' checked-all' : '') + '">' +
+        escapeHtml(item.text) + '</span>' + meta + '</td>' +
+      cells +
+      '<td><button class="del-btn" data-del="' + id + '" title="Löschen">🗑</button></td>' +
+      '</tr>';
+  }
 
-    if (itemIds.length === 0) {
+  function renderItems() {
+    const totalCount = Object.keys(items).length;
+
+    if (totalCount === 0) {
       itemRows.innerHTML = "";
       emptyState.style.display = "block";
       return;
     }
     emptyState.style.display = "none";
 
-    itemRows.innerHTML = itemIds.map(function (id) {
-      const item = items[id];
-      const checked = item.checked || {};
-      const allChecked = TRAVELER_IDS.every(function (tid) { return !!checked[tid]; });
-      const cells = TRAVELER_IDS.map(function (tid) {
-        return '<td><input type="checkbox" data-item="' + id + '" data-traveler="' + tid + '" ' +
-          (checked[tid] ? "checked" : "") + '></td>';
-      }).join("");
-      const meta = item.addedBy ? '<div class="item-meta">von ' + escapeHtml(item.addedBy) + '</div>' : "";
-      return '<tr data-id="' + id + '">' +
-        '<td class="drag-col"><span class="drag-handle" title="Ziehen zum Umsortieren">⠿</span></td>' +
-        '<td class="item-col"><span class="item-text' + (allChecked ? ' checked-all' : '') + '">' +
-          escapeHtml(item.text) + '</span>' + meta + '</td>' +
-        cells +
-        '<td><button class="del-btn" data-del="' + id + '" title="Löschen">🗑</button></td>' +
-        '</tr>';
-    }).join("");
+    const groups = groupedItemIds();
+    const colspan = 3 + TRAVELER_IDS.length;
+    let html = "";
+    CATEGORIES.forEach(function (cat) {
+      const ids = groups[cat.id];
+      if (!ids.length) return;
+      html += '<tr class="cat-header"><td colspan="' + colspan + '">' + escapeHtml(cat.label) +
+        ' <span class="cat-count">(' + ids.length + ')</span></td></tr>';
+      html += ids.map(renderItemRow).join("");
+    });
+    itemRows.innerHTML = html;
 
     itemRows.querySelectorAll("input[type=checkbox]").forEach(function (cb) {
       cb.addEventListener("change", function () {
@@ -543,7 +630,7 @@
   itemsRef.on("value", function (snap) {
     items = snap.val() || {};
     renderAll();
-    migrateMissingOrder();
+    migrateLegacyFields();
   }, function (err) {
     statusEl.textContent = "Verbindung fehlgeschlagen: " + err.message;
   });
@@ -562,15 +649,18 @@
     const input = document.getElementById("new-item");
     const text = input.value.trim();
     if (!text) return;
+    const category = CATEGORY_IDS.indexOf(categorySelect.value) !== -1 ? categorySelect.value : DEFAULT_CATEGORY;
     const maxOrder = Object.keys(items).reduce(function (max, id) {
-      const o = items[id].order;
-      return typeof o === "number" && o > max ? o : max;
+      const it = items[id];
+      if (categoryOf(it) !== category) return max;
+      return typeof it.order === "number" && it.order > max ? it.order : max;
     }, -1);
     const newRef = itemsRef.push();
     newRef.set({
       text: text,
       addedBy: myNameInput.value.trim() || "",
       createdAt: firebase.database.ServerValue.TIMESTAMP,
+      category: category,
       order: maxOrder + 1,
       checked: { t1: false, t2: false, t3: false, t4: false }
     });

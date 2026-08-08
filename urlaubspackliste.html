@@ -159,6 +159,29 @@
     cursor: pointer;
     padding: 4px 8px;
   }
+  th.drag-col, td.drag-col {
+    width: 32px;
+    padding-left: 4px;
+    padding-right: 0;
+  }
+  .drag-handle {
+    display: inline-block;
+    width: 24px;
+    line-height: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-light);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  tr.dragging {
+    background: #e3f2fd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  tr.dragging td {
+    opacity: 0.85;
+  }
   .item-meta {
     font-size: 0.7rem;
     color: var(--text-light);
@@ -354,7 +377,7 @@
   }
 
   function renderHeader() {
-    headerRow.innerHTML = '<th class="item-col">Gegenstand</th>';
+    headerRow.innerHTML = '<th class="drag-col"></th><th class="item-col">Gegenstand</th>';
     TRAVELER_IDS.forEach(function (tid) {
       const th = document.createElement("th");
       th.className = "traveler-col";
@@ -391,10 +414,69 @@
     progressCard.innerHTML = html;
   }
 
-  function renderItems() {
-    const itemIds = Object.keys(items).sort(function (a, b) {
+  function sortedItemIds() {
+    return Object.keys(items).sort(function (a, b) {
+      const orderA = typeof items[a].order === "number" ? items[a].order : Infinity;
+      const orderB = typeof items[b].order === "number" ? items[b].order : Infinity;
+      if (orderA !== orderB) return orderA - orderB;
       return (items[a].createdAt || 0) - (items[b].createdAt || 0);
     });
+  }
+
+  function migrateMissingOrder() {
+    const ids = sortedItemIds();
+    const missing = ids.some(function (id) { return typeof items[id].order !== "number"; });
+    if (!missing) return;
+    const updates = {};
+    ids.forEach(function (id, idx) { updates[id + "/order"] = idx; });
+    itemsRef.update(updates);
+  }
+
+  let dragState = null;
+
+  function persistOrderFromDom() {
+    const ids = Array.from(itemRows.children).map(function (tr) { return tr.getAttribute("data-id"); });
+    const updates = {};
+    ids.forEach(function (id, idx) { updates[id + "/order"] = idx; });
+    itemsRef.update(updates);
+  }
+
+  function onHandlePointerDown(e) {
+    const tr = e.currentTarget.closest("tr");
+    if (!tr) return;
+    e.preventDefault();
+    dragState = { id: tr.getAttribute("data-id"), pointerId: e.pointerId };
+    tr.classList.add("dragging");
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onHandlePointerMove(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const tr = itemRows.querySelector('tr[data-id="' + dragState.id + '"]');
+    if (!tr) return;
+    const y = e.clientY;
+    const rows = Array.from(itemRows.children).filter(function (r) { return r !== tr; });
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (y < mid) {
+        itemRows.insertBefore(tr, rows[i]);
+        return;
+      }
+    }
+    itemRows.appendChild(tr);
+  }
+
+  function onHandlePointerUp(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const tr = itemRows.querySelector('tr[data-id="' + dragState.id + '"]');
+    if (tr) tr.classList.remove("dragging");
+    dragState = null;
+    persistOrderFromDom();
+  }
+
+  function renderItems() {
+    const itemIds = sortedItemIds();
 
     if (itemIds.length === 0) {
       itemRows.innerHTML = "";
@@ -412,7 +494,8 @@
           (checked[tid] ? "checked" : "") + '></td>';
       }).join("");
       const meta = item.addedBy ? '<div class="item-meta">von ' + escapeHtml(item.addedBy) + '</div>' : "";
-      return '<tr>' +
+      return '<tr data-id="' + id + '">' +
+        '<td class="drag-col"><span class="drag-handle" title="Ziehen zum Umsortieren">⠿</span></td>' +
         '<td class="item-col"><span class="item-text' + (allChecked ? ' checked-all' : '') + '">' +
           escapeHtml(item.text) + '</span>' + meta + '</td>' +
         cells +
@@ -436,9 +519,16 @@
         }
       });
     });
+    itemRows.querySelectorAll(".drag-handle").forEach(function (handle) {
+      handle.addEventListener("pointerdown", onHandlePointerDown);
+      handle.addEventListener("pointermove", onHandlePointerMove);
+      handle.addEventListener("pointerup", onHandlePointerUp);
+      handle.addEventListener("pointercancel", onHandlePointerUp);
+    });
   }
 
   function renderAll() {
+    if (dragState) return;
     renderHeader();
     renderProgress();
     renderItems();
@@ -453,6 +543,7 @@
   itemsRef.on("value", function (snap) {
     items = snap.val() || {};
     renderAll();
+    migrateMissingOrder();
   }, function (err) {
     statusEl.textContent = "Verbindung fehlgeschlagen: " + err.message;
   });
@@ -471,11 +562,16 @@
     const input = document.getElementById("new-item");
     const text = input.value.trim();
     if (!text) return;
+    const maxOrder = Object.keys(items).reduce(function (max, id) {
+      const o = items[id].order;
+      return typeof o === "number" && o > max ? o : max;
+    }, -1);
     const newRef = itemsRef.push();
     newRef.set({
       text: text,
       addedBy: myNameInput.value.trim() || "",
       createdAt: firebase.database.ServerValue.TIMESTAMP,
+      order: maxOrder + 1,
       checked: { t1: false, t2: false, t3: false, t4: false }
     });
     input.value = "";

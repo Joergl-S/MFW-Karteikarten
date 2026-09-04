@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Einkaufsliste</title>
+<style>
+  :root {
+    --blue: #2196F3;
+    --blue-dark: #1769aa;
+    --green: #43a047;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --border: #e0e0e0;
+    --text: #222;
+    --text-light: #777;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    background: var(--blue);
+    color: white;
+    padding: 16px 16px 20px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 1.4rem;
+  }
+  header p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+  #status {
+    text-align: center;
+    padding: 8px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 12px;
+  }
+  #setup-notice {
+    background: #fff3cd;
+    border: 1px solid #ffe08a;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 12px;
+    line-height: 1.5;
+  }
+  #setup-notice code {
+    background: #00000010;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .progress-card {
+    padding: 14px 16px;
+  }
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+  }
+  .progress-name {
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .progress-bar-bg {
+    flex: 1;
+    background: #eee;
+    border-radius: 6px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    background: var(--green);
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.25s ease;
+  }
+  .progress-frac {
+    width: 44px;
+    text-align: right;
+    color: var(--text-light);
+    flex-shrink: 0;
+  }
+  .table-scroll {
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th, td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  th {
+    background: #fafafa;
+    position: sticky;
+    top: 0;
+  }
+  th.item-col, td.item-col {
+    text-align: left;
+  }
+  td.item-col .item-text.checked-all {
+    text-decoration: line-through;
+    color: var(--text-light);
+  }
+  .qty-badge {
+    display: inline-block;
+    background: #e3f2fd;
+    color: var(--blue-dark);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin-right: 6px;
+  }
+  input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: var(--green);
+    cursor: pointer;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  th.drag-col, td.drag-col {
+    width: 32px;
+    padding-left: 4px;
+    padding-right: 0;
+  }
+  .drag-handle {
+    display: inline-block;
+    width: 24px;
+    line-height: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-light);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+  tr.dragging {
+    background: #e3f2fd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  tr.dragging td {
+    opacity: 0.85;
+  }
+  tr.cat-header td {
+    background: #eef5fc;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--blue-dark);
+    text-align: left;
+    padding: 8px 10px;
+  }
+  .cat-count {
+    font-weight: normal;
+    color: var(--text-light);
+  }
+  .item-meta {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    margin-top: 2px;
+  }
+  .add-form {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    flex-wrap: wrap;
+  }
+  .add-form input[type="text"]#new-item {
+    flex: 1;
+    min-width: 140px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  .add-form input[type="text"]#new-qty {
+    width: 72px;
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  .add-form select {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: white;
+    max-width: 160px;
+  }
+  .add-form button {
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .add-form button:hover { background: var(--blue-dark); }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .toolbar .name-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+  }
+  .toolbar input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    width: 110px;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--text-light);
+  }
+  .empty-state {
+    text-align: center;
+    color: var(--text-light);
+    padding: 30px 16px;
+    font-size: 0.9rem;
+  }
+  .share-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 Einkaufsliste</h1>
+  <p id="list-name">Gemeinsame Einkaufsliste für die Familie</p>
+</header>
+
+<div id="status">Verbinde…</div>
+
+<div id="setup-notice" style="display:none;">
+  <strong>Einmalige Einrichtung nötig</strong><br>
+  Diese Einkaufsliste braucht eine kostenlose Firebase-Datenbank, damit alle Familienmitglieder
+  gleichzeitig dieselbe Liste sehen. Öffne <code>einkaufsliste.html</code> im Editor und trage
+  deine Firebase-Zugangsdaten im Abschnitt <code>firebaseConfig</code> ein.
+</div>
+
+<div class="wrap" id="app" style="display:none;">
+
+  <div class="card progress-card" id="progress-card"></div>
+
+  <div class="card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="drag-col"></th>
+            <th style="width:40px;">✓</th>
+            <th class="item-col">Artikel</th>
+            <th style="width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="item-rows">
+        </tbody>
+      </table>
+    </div>
+    <div id="empty-state" class="empty-state" style="display:none;">
+      Noch nichts auf der Liste. Füg unten den ersten Artikel hinzu!
+    </div>
+    <form class="add-form" id="add-form">
+      <select id="new-category" title="Kategorie"></select>
+      <input type="text" id="new-qty" placeholder="Menge" autocomplete="off">
+      <input type="text" id="new-item" placeholder="z.B. Milch" autocomplete="off" required>
+      <button type="submit">Hinzufügen</button>
+    </form>
+  </div>
+
+  <div class="card toolbar">
+    <div class="name-field">
+      Dein Name (für „hinzugefügt von“):
+      <input type="text" id="my-name" placeholder="z.B. Mama">
+    </div>
+    <button class="reset-btn" id="clear-bought-btn" type="button">Gekaufte Artikel entfernen</button>
+  </div>
+
+  <p class="share-hint">Diese Seite mit der Familie teilen (Link senden) – Änderungen erscheinen bei allen sofort.</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---------------------------------------------------------------------
+  // Firebase-Konfiguration – nutzt dasselbe Firebase-Projekt wie
+  // urlaubspackliste.html, nur unter einem eigenen Datenpfad
+  // ("einkaufsliste" statt "urlaubspackliste"). Dafür müssen einmalig
+  // die Datenbank-Regeln um diesen Pfad ergänzt werden, siehe README-
+  // Hinweis vom Chat.
+  // ---------------------------------------------------------------------
+  const firebaseConfig = {
+    apiKey: "AIzaSyBSxTfS55cBxFUGKoOdkbmJRw1qVflmvU0",
+    authDomain: "packliste-athen.firebaseapp.com",
+    databaseURL: "https://packliste-athen-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "packliste-athen",
+    storageBucket: "packliste-athen.firebasestorage.app",
+    messagingSenderId: "550630852436",
+    appId: "1:550630852436:web:afb889cc8feba2f7d3eac1"
+  };
+
+  // Optional: mehrere Listen über ?liste=name in der URL, sonst "familie".
+  const params = new URLSearchParams(window.location.search);
+  const listId = (params.get("liste") || "familie").replace(/[.#$\[\]/]/g, "_");
+  const basePath = "einkaufsliste/" + listId;
+
+  const CATEGORIES = [
+    { id: "obst-gemuese", label: "🥦 Obst & Gemüse" },
+    { id: "milchprodukte", label: "🥛 Milchprodukte & Eier" },
+    { id: "fleisch-fisch", label: "🥩 Fleisch & Fisch" },
+    { id: "brot", label: "🍞 Brot & Backwaren" },
+    { id: "vorraete", label: "🥫 Vorräte & Konserven" },
+    { id: "tiefkuehl", label: "🧊 Tiefkühl" },
+    { id: "getraenke", label: "🥤 Getränke" },
+    { id: "drogerie", label: "🧴 Drogerie & Haushalt" },
+    { id: "sonstiges", label: "📦 Sonstiges" }
+  ];
+  const DEFAULT_CATEGORY = "sonstiges";
+  const CATEGORY_IDS = CATEGORIES.map(function (c) { return c.id; });
+
+  const statusEl = document.getElementById("status");
+  const setupNotice = document.getElementById("setup-notice");
+  const appEl = document.getElementById("app");
+
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "DEIN_API_KEY") {
+    statusEl.textContent = "";
+    setupNotice.style.display = "block";
+    return;
+  }
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const itemsRef = db.ref(basePath + "/items");
+
+  let items = {};
+
+  const itemRows = document.getElementById("item-rows");
+  const emptyState = document.getElementById("empty-state");
+  const progressCard = document.getElementById("progress-card");
+  const myNameInput = document.getElementById("my-name");
+  const categorySelect = document.getElementById("new-category");
+
+  myNameInput.value = localStorage.getItem("einkaufsliste-mein-name") || "";
+  myNameInput.addEventListener("change", function () {
+    localStorage.setItem("einkaufsliste-mein-name", myNameInput.value.trim());
+  });
+
+  categorySelect.innerHTML = CATEGORIES.map(function (c) {
+    return '<option value="' + c.id + '">' + escapeHtml(c.label) + '</option>';
+  }).join("");
+  categorySelect.value = localStorage.getItem("einkaufsliste-letzte-kategorie") || DEFAULT_CATEGORY;
+  categorySelect.addEventListener("change", function () {
+    localStorage.setItem("einkaufsliste-letzte-kategorie", categorySelect.value);
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderProgress() {
+    const itemIds = Object.keys(items);
+    const total = itemIds.length;
+    const bought = itemIds.filter(function (id) { return !!items[id].checked; }).length;
+    const pct = total === 0 ? 0 : Math.round((bought / total) * 100);
+    progressCard.innerHTML = '<div class="progress-row">' +
+      '<div class="progress-name">Gekauft</div>' +
+      '<div class="progress-bar-bg"><div class="progress-bar-fill" style="width:' + pct + '%;"></div></div>' +
+      '<div class="progress-frac">' + bought + '/' + total + '</div>' +
+      '</div>';
+  }
+
+  function sortedItemIds() {
+    return Object.keys(items).sort(function (a, b) {
+      const orderA = typeof items[a].order === "number" ? items[a].order : Infinity;
+      const orderB = typeof items[b].order === "number" ? items[b].order : Infinity;
+      if (orderA !== orderB) return orderA - orderB;
+      return (items[a].createdAt || 0) - (items[b].createdAt || 0);
+    });
+  }
+
+  function categoryOf(item) {
+    return item.category && CATEGORY_IDS.indexOf(item.category) !== -1 ? item.category : DEFAULT_CATEGORY;
+  }
+
+  function migrateLegacyFields() {
+    const ids = sortedItemIds();
+    const updates = {};
+    let needsUpdate = false;
+    ids.forEach(function (id, idx) {
+      if (typeof items[id].order !== "number") {
+        updates[id + "/order"] = idx;
+        needsUpdate = true;
+      }
+      if (items[id].category !== categoryOf(items[id])) {
+        updates[id + "/category"] = categoryOf(items[id]);
+        needsUpdate = true;
+      }
+    });
+    if (needsUpdate) itemsRef.update(updates);
+  }
+
+  function groupedItemIds() {
+    const ids = sortedItemIds();
+    const groups = {};
+    CATEGORY_IDS.forEach(function (cid) { groups[cid] = []; });
+    ids.forEach(function (id) {
+      groups[categoryOf(items[id])].push(id);
+    });
+    return groups;
+  }
+
+  let dragState = null;
+
+  function persistOrderFromDom() {
+    const updates = {};
+    const counters = {};
+    Array.from(itemRows.querySelectorAll("tr[data-id]")).forEach(function (tr) {
+      const id = tr.getAttribute("data-id");
+      const cat = tr.getAttribute("data-category");
+      const idx = counters[cat] || 0;
+      updates[id + "/order"] = idx;
+      counters[cat] = idx + 1;
+    });
+    itemsRef.update(updates);
+  }
+
+  function onHandlePointerDown(e) {
+    const tr = e.currentTarget.closest("tr");
+    if (!tr) return;
+    e.preventDefault();
+    dragState = { id: tr.getAttribute("data-id"), pointerId: e.pointerId };
+    tr.classList.add("dragging");
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onHandlePointerMove(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const tr = itemRows.querySelector('tr[data-id="' + dragState.id + '"]');
+    if (!tr) return;
+    const category = tr.getAttribute("data-category");
+    const y = e.clientY;
+    const rows = Array.from(itemRows.querySelectorAll('tr[data-category="' + category + '"]'))
+      .filter(function (r) { return r !== tr; });
+    for (let i = 0; i < rows.length; i++) {
+      const rect = rows[i].getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (y < mid) {
+        itemRows.insertBefore(tr, rows[i]);
+        return;
+      }
+    }
+    if (rows.length) {
+      itemRows.insertBefore(tr, rows[rows.length - 1].nextSibling);
+    }
+  }
+
+  function onHandlePointerUp(e) {
+    if (!dragState || e.pointerId !== dragState.pointerId) return;
+    const tr = itemRows.querySelector('tr[data-id="' + dragState.id + '"]');
+    if (tr) tr.classList.remove("dragging");
+    dragState = null;
+    persistOrderFromDom();
+  }
+
+  function renderItemRow(id) {
+    const item = items[id];
+    const qty = item.quantity ? '<span class="qty-badge">' + escapeHtml(item.quantity) + '</span>' : "";
+    const meta = item.addedBy ? '<div class="item-meta">von ' + escapeHtml(item.addedBy) + '</div>' : "";
+    return '<tr data-id="' + id + '" data-category="' + categoryOf(item) + '">' +
+      '<td class="drag-col"><span class="drag-handle" title="Ziehen zum Umsortieren">⠿</span></td>' +
+      '<td><input type="checkbox" data-item="' + id + '" ' + (item.checked ? "checked" : "") + '></td>' +
+      '<td class="item-col"><span class="item-text' + (item.checked ? ' checked-all' : '') + '">' +
+        qty + escapeHtml(item.text) + '</span>' + meta + '</td>' +
+      '<td><button class="del-btn" data-del="' + id + '" title="Löschen">🗑</button></td>' +
+      '</tr>';
+  }
+
+  function renderItems() {
+    const totalCount = Object.keys(items).length;
+
+    if (totalCount === 0) {
+      itemRows.innerHTML = "";
+      emptyState.style.display = "block";
+      return;
+    }
+    emptyState.style.display = "none";
+
+    const groups = groupedItemIds();
+    const colspan = 4;
+    let html = "";
+    CATEGORIES.forEach(function (cat) {
+      const ids = groups[cat.id];
+      if (!ids.length) return;
+      html += '<tr class="cat-header"><td colspan="' + colspan + '">' + escapeHtml(cat.label) +
+        ' <span class="cat-count">(' + ids.length + ')</span></td></tr>';
+      html += ids.map(renderItemRow).join("");
+    });
+    itemRows.innerHTML = html;
+
+    itemRows.querySelectorAll("input[type=checkbox]").forEach(function (cb) {
+      cb.addEventListener("change", function () {
+        const id = cb.getAttribute("data-item");
+        itemsRef.child(id).child("checked").set(cb.checked);
+      });
+    });
+    itemRows.querySelectorAll("[data-del]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const id = btn.getAttribute("data-del");
+        const text = items[id] ? items[id].text : "";
+        if (confirm('„' + text + '“ von der Liste löschen?')) {
+          itemsRef.child(id).remove();
+        }
+      });
+    });
+    itemRows.querySelectorAll(".drag-handle").forEach(function (handle) {
+      handle.addEventListener("pointerdown", onHandlePointerDown);
+      handle.addEventListener("pointermove", onHandlePointerMove);
+      handle.addEventListener("pointerup", onHandlePointerUp);
+      handle.addEventListener("pointercancel", onHandlePointerUp);
+    });
+  }
+
+  function renderAll() {
+    if (dragState) return;
+    renderProgress();
+    renderItems();
+  }
+
+  itemsRef.on("value", function (snap) {
+    items = snap.val() || {};
+    renderAll();
+    migrateLegacyFields();
+  }, function (err) {
+    statusEl.textContent = "Verbindung fehlgeschlagen: " + err.message;
+  });
+
+  db.ref(".info/connected").on("value", function (snap) {
+    if (snap.val() === true) {
+      statusEl.textContent = "Verbunden – Änderungen werden live geteilt";
+      appEl.style.display = "block";
+    } else {
+      statusEl.textContent = "Verbinde…";
+    }
+  });
+
+  document.getElementById("add-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const input = document.getElementById("new-item");
+    const qtyInput = document.getElementById("new-qty");
+    const text = input.value.trim();
+    if (!text) return;
+    const category = CATEGORY_IDS.indexOf(categorySelect.value) !== -1 ? categorySelect.value : DEFAULT_CATEGORY;
+    const maxOrder = Object.keys(items).reduce(function (max, id) {
+      const it = items[id];
+      if (categoryOf(it) !== category) return max;
+      return typeof it.order === "number" && it.order > max ? it.order : max;
+    }, -1);
+    const newRef = itemsRef.push();
+    newRef.set({
+      text: text,
+      quantity: qtyInput.value.trim() || null,
+      addedBy: myNameInput.value.trim() || "",
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      category: category,
+      order: maxOrder + 1,
+      checked: false
+    });
+    input.value = "";
+    qtyInput.value = "";
+    input.focus();
+  });
+
+  document.getElementById("clear-bought-btn").addEventListener("click", function () {
+    const boughtIds = Object.keys(items).filter(function (id) { return items[id].checked; });
+    if (boughtIds.length === 0) {
+      alert("Keine gekauften Artikel zum Entfernen.");
+      return;
+    }
+    if (!confirm(boughtIds.length + " gekaufte Artikel von der Liste entfernen?")) return;
+    const updates = {};
+    boughtIds.forEach(function (id) { updates[id] = null; });
+    itemsRef.update(updates);
+  });
+
+  const listName = params.get("liste");
+  if (listName) {
+    document.getElementById("list-name").textContent = "Einkaufsliste: " + listName;
+  }
+})();
+</script>
+</body>
+</html>

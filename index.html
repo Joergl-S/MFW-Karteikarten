@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LEGO-Teilefinder</title>
+  <meta name="description" content="Findet gesuchte LEGO-Teile auf einem Foto.">
+  <meta name="theme-color" content="#1e293b">
+  <!-- iOS / iPadOS: Vollbild-App vom Home-Bildschirm -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Teilefinder">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>LEGO-Teilefinder</h1>
+    <button id="btn-settings" class="icon-btn" aria-label="Einstellungen" title="Einstellungen">⚙︎</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="search" role="tab">1 · Suchliste <span class="badge" id="badge-search"></span></button>
+    <button class="tab" data-tab="photo" role="tab">2 · Foto <span class="badge" id="badge-photo"></span></button>
+    <button class="tab" data-tab="analyze" role="tab">3 · Analyse <span class="badge" id="badge-analyze"></span></button>
+    <button class="tab" data-tab="result" role="tab">4 · Ergebnis <span class="badge" id="badge-result"></span></button>
+  </nav>
+
+  <!-- Hinweis-Banner (Daten laden, Updates, Fehler) -->
+  <div id="banner" class="banner" hidden></div>
+
+  <main>
+    <!-- ================= Schritt 1: Suchteile festlegen ================= -->
+    <section id="tab-search" class="panel active">
+      <div class="card">
+        <div class="seg" role="group" aria-label="Suchart">
+          <button class="seg-btn active" data-mode="text">Per Text</button>
+          <button class="seg-btn" data-mode="photo">Per Beispielfoto</button>
+        </div>
+
+        <div id="search-text">
+          <input id="search-input" type="search" inputmode="search" autocomplete="off" autocorrect="off"
+                 autocapitalize="off" spellcheck="false"
+                 placeholder="Teilenummer oder Name, z. B. 3001 oder brick 2x4">
+          <label class="check">
+            <input id="hide-prints" type="checkbox" checked> Bedruckte Varianten ausblenden
+          </label>
+          <div id="search-status" class="muted small"></div>
+          <ul id="search-results" class="result-list"></ul>
+        </div>
+
+        <div id="search-photo" hidden>
+          <p class="muted small">Ein einzelnes Teil fotografieren (am besten auf hellem, einfarbigem Untergrund).
+            Brickognize schlägt passende Teile vor, die Farbe wird aus dem Foto geschätzt.</p>
+          <div class="btn-row">
+            <label class="btn primary">📷 Teil fotografieren
+              <input id="ex-camera" type="file" accept="image/*" capture="environment" hidden>
+            </label>
+            <label class="btn">🖼 Aus Fotomediathek
+              <input id="ex-library" type="file" accept="image/*" hidden>
+            </label>
+          </div>
+          <div class="ex-preview">
+            <img id="ex-img" alt="" hidden>
+            <div>
+              <div id="ex-status" class="muted small"></div>
+              <div id="ex-color" class="small"></div>
+            </div>
+          </div>
+          <ul id="ex-results" class="result-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Suchliste</h2>
+          <button id="btn-clear-list" class="btn-link">Leeren</button>
+        </div>
+        <ul id="wish-list" class="wish-list"></ul>
+        <p id="wish-empty" class="muted">Noch keine Teile in der Suchliste. Suche oben ein Teil und tippe es an.</p>
+        <div class="next-row"><button class="btn primary" data-goto="photo">Weiter: Foto →</button></div>
+      </div>
+    </section>
+
+    <!-- ================= Schritt 2: Foto ================= -->
+    <section id="tab-photo" class="panel">
+      <div class="card">
+        <h2>Foto aufnehmen</h2>
+        <div class="btn-row">
+          <label class="btn primary">📷 Kamera
+            <input id="photo-camera" type="file" accept="image/*" capture="environment" hidden>
+          </label>
+          <label class="btn">🖼 Aus Fotomediathek
+            <input id="photo-library" type="file" accept="image/*" hidden>
+          </label>
+        </div>
+        <div id="photo-info" class="muted small"></div>
+        <div class="viewer-wrap" id="photo-viewer-wrap" hidden>
+          <canvas id="photo-canvas" class="viewer"></canvas>
+        </div>
+        <div id="photo-tools" hidden>
+          <div class="btn-row">
+            <button id="btn-bg-tap" class="btn" aria-pressed="false">🎯 Hintergrund antippen</button>
+            <button id="btn-bg-clear" class="btn" hidden>Automatisch</button>
+            <span id="bg-info" class="small inline-info"></span>
+          </div>
+          <p class="muted small">Hintergrund: normalerweise automatisch vom Bildrand. Wenn am Rand Teile liegen oder die
+            Erkennung schlecht ist, „Hintergrund antippen“ und auf eine freie Stelle tippen. Ist der Hintergrund weiß
+            oder grau, wird damit auch der Weißabgleich gemacht.</p>
+          <div class="next-row"><button class="btn primary" data-goto="analyze">Weiter: Analyse →</button></div>
+        </div>
+        <div class="tips">
+          <strong>Aufnahmetipps</strong>
+          <ul>
+            <li>Einfarbiger, matter Hintergrund, der sich deutlich von den Teilen abhebt
+              (helle/weiße/graue Teile → dunkler oder farbiger Hintergrund, z. B. dunkelblau).</li>
+            <li>Gleichmäßiges, helles Licht von oben, möglichst ohne Schatten, kein Blitz.</li>
+            <li>Senkrecht von oben, iPad ruhig halten, die ganze Fläche füllt das Bild.</li>
+            <li>Teile nicht stapeln oder überlappen. Berühren ist okay, ein kleiner Abstand ist besser.</li>
+            <li>Bei sehr vielen Teilen: in den Einstellungen den Kachel-Modus (2×2) probieren.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Schritt 3: Analyse ================= -->
+    <section id="tab-analyze" class="panel">
+      <div class="card">
+        <h2>Analyse</h2>
+        <p id="an-hint" class="muted small"></p>
+        <div class="btn-row">
+          <button id="btn-analyze" class="btn primary">Teile im Foto suchen</button>
+          <button id="btn-recognize" class="btn primary" hidden>Mit Brickognize erkennen</button>
+        </div>
+        <div id="progress" class="progress" hidden>
+          <progress id="progress-bar" max="1" value="0"></progress>
+          <div class="progress-row">
+            <span id="progress-text" class="small"></span>
+            <button id="btn-abort" class="btn small">Abbrechen</button>
+          </div>
+        </div>
+        <div id="an-summary"></div>
+        <div id="an-warnings"></div>
+      </div>
+
+      <div class="card" id="debug-card" hidden>
+        <div class="card-head">
+          <h2>Debug-Ansicht</h2>
+          <div class="seg seg-inline" id="debug-mode">
+            <button class="seg-btn active" data-view="overlay">Konturen</button>
+            <button class="seg-btn" data-view="mask">Maske</button>
+            <button class="seg-btn" data-view="photo">Foto</button>
+          </div>
+        </div>
+        <p class="muted small">Farbige Flächen = erkannte Teile, weiße Linien = Umrisse, orange = „evtl. mehrere Teile“,
+          rot = Trennlinien/verworfene Krümel. Tippen auf ein Teil zeigt die Messwerte.</p>
+        <div class="viewer-wrap tall"><canvas id="debug-canvas" class="viewer"></canvas></div>
+        <details>
+          <summary>Messwerte</summary>
+          <pre id="debug-stats" class="debug-pre"></pre>
+        </details>
+        <details>
+          <summary>Regionen und Farben (Tabelle)</summary>
+          <div class="table-wrap"><table id="debug-table" class="debug-table"></table></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ================= Schritt 4: Ergebnis ================= -->
+    <section id="tab-result" class="panel">
+      <div class="card">
+        <h2 id="res-summary">Noch kein Ergebnis</h2>
+        <div id="res-counters" class="counters"></div>
+        <div class="toolbar">
+          <div class="seg seg-inline" id="dim-mode" aria-label="Nicht-Treffer">
+            <button class="seg-btn active" data-dim="show">Alle</button>
+            <button class="seg-btn" data-dim="dim">Abdunkeln</button>
+            <button class="seg-btn" data-dim="hide">Nur Treffer</button>
+          </div>
+          <button id="btn-manual" class="btn" aria-pressed="false">✚ Manuell</button>
+          <button id="btn-fit" class="btn">⤢</button>
+          <button id="btn-export" class="btn">PNG</button>
+        </div>
+        <p id="manual-hint" class="hint" hidden>Manuell: auf ein Teil tippen oder einen Rahmen aufziehen → Ausschnitt wird geprüft.
+          Zum Verschieben „Manuell“ wieder ausschalten.</p>
+        <div class="viewer-wrap tall"><canvas id="result-canvas" class="viewer"></canvas></div>
+        <p class="muted small">Grün = sicher, Gelb = unsicher, Grau = andere Teile. Box antippen zeigt Kandidaten und erlaubt Korrekturen.
+          Ergebnisse sind Wahrscheinlichkeiten, keine Gewissheit.</p>
+      </div>
+      <div class="card">
+        <h2>Treffer</h2>
+        <ul id="hit-list" class="result-list"></ul>
+        <p id="hit-empty" class="muted">Keine Treffer.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= Dialog: Teil + Farbe wählen ================= -->
+  <dialog id="dlg-part" class="sheet">
+    <form method="dialog" class="sheet-inner">
+      <div class="sheet-head">
+        <h2 id="dp-title">Teil</h2>
+        <button class="icon-btn" value="cancel" aria-label="Schließen">✕</button>
+      </div>
+      <div class="part-hero">
+        <img id="dp-img" alt="" width="120" height="120">
+        <div>
+          <div id="dp-num" class="mono big"></div>
+          <div id="dp-name"></div>
+          <div id="dp-cat" class="muted small"></div>
+          <div id="dp-rel" class="muted small"></div>
+        </div>
+      </div>
+
+      <h3>Farbe</h3>
+      <input id="dp-color-filter" type="search" placeholder="Farbe filtern, z. B. red, gray, trans" autocomplete="off" autocorrect="off" autocapitalize="off">
+      <div id="dp-color-selected" class="color-selected"></div>
+      <div id="dp-colors" class="color-grid"></div>
+
+      <h3>Menge <span class="muted small">(optional)</span></h3>
+      <div class="qty">
+        <button type="button" class="btn" data-qty="-1">−</button>
+        <input id="dp-qty" type="number" inputmode="numeric" min="0" placeholder="beliebig">
+        <button type="button" class="btn" data-qty="1">+</button>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn" value="cancel">Abbrechen</button>
+        <button id="dp-add" class="btn primary" value="add">Zur Suchliste</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ================= Dialog: Region / Kandidaten ================= -->
+  <dialog id="dlg-region" class="sheet">
+    <form method="dialog" class="sheet-inner">
+      <div class="sheet-head">
+        <h2 id="dr-title">Teil</h2>
+        <button class="icon-btn" value="cancel" aria-label="Schließen">✕</button>
+      </div>
+      <div class="region-hero">
+        <div id="dr-crop" class="crop-box"></div>
+        <div>
+          <div id="dr-status"></div>
+          <div id="dr-flags" class="muted small"></div>
+          <div id="dr-color" class="small"></div>
+        </div>
+      </div>
+      <h3>Kandidaten (Brickognize)</h3>
+      <ul id="dr-cands" class="result-list"></ul>
+      <p id="dr-nocands" class="muted small"></p>
+      <h3>Korrigieren</h3>
+      <div class="field">Als Treffer zählen für
+        <select id="dr-wish"></select>
+      </div>
+      <div class="btn-row">
+        <button type="button" id="dr-confirm" class="btn primary">✔ Treffer</button>
+        <button type="button" id="dr-reject" class="btn">✘ Kein Treffer</button>
+        <button type="button" id="dr-reset" class="btn">Automatisch</button>
+        <button type="button" id="dr-recog" class="btn">🔍 Brickognize</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ================= Dialog: Einstellungen ================= -->
+  <dialog id="dlg-settings" class="sheet">
+    <form method="dialog" class="sheet-inner">
+      <div class="sheet-head">
+        <h2>Einstellungen</h2>
+        <button class="icon-btn" value="cancel" aria-label="Schließen">✕</button>
+      </div>
+
+      <h3>Erkennung</h3>
+      <label class="field">Modus
+        <select id="set-mode">
+          <option value="normal">Normal (100–300 Teile)</option>
+          <option value="small">Kleine Menge (50–100 Teile, strenger)</option>
+        </select>
+      </label>
+      <label class="field">Kachel-Modus
+        <select id="set-tiles">
+          <option value="1">Aus (ganzes Bild)</option>
+          <option value="2">2 × 2 (viele kleine Teile)</option>
+          <option value="3">3 × 3 (sehr viele/kleine Teile, langsamer)</option>
+        </select>
+      </label>
+      <label class="field">Weißabgleich
+        <select id="set-wb">
+          <option value="auto">Automatisch (bei weißem/grauem Hintergrund)</option>
+          <option value="off">Aus</option>
+        </select>
+      </label>
+      <label class="field">Farbtoleranz (ΔE, größer = mehr Kandidaten)
+        <input id="set-tol" type="number" min="3" max="40" step="1" inputmode="numeric">
+      </label>
+      <label class="check"><input id="set-checkall" type="checkbox"> Alle Ausschnitte prüfen (langsamer, mehr API-Last)</label>
+      <label class="check"><input id="set-hideothers" type="checkbox"> Nachbarteile im Ausschnitt ausblenden</label>
+      <label class="check"><input id="set-debug" type="checkbox"> Debug-Ansicht anzeigen</label>
+
+      <h3>Brickognize</h3>
+      <label class="field">API-/Proxy-URL
+        <input id="set-api" type="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <div class="btn-row">
+        <button type="button" id="btn-api-test" class="btn">Verbindung testen</button>
+        <span id="api-test-result" class="small inline-info"></span>
+      </div>
+      <label class="field">Parallele Anfragen
+        <input id="set-parallel" type="number" min="1" max="6" inputmode="numeric">
+      </label>
+      <label class="field">Score „sicher“ ab
+        <input id="set-sure" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+      </label>
+      <label class="field">Score „unsicher“ ab
+        <input id="set-unsure" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+      </label>
+
+      <h3>Teiledaten (Rebrickable)</h3>
+      <div id="data-status" class="muted small"></div>
+      <div class="btn-row">
+        <button type="button" id="btn-data-reload" class="btn">Neu laden</button>
+        <label class="btn">Dateien importieren …
+          <input id="data-import" type="file" multiple accept=".csv,.gz,text/csv,application/gzip" hidden>
+        </label>
+      </div>
+      <p class="muted small">Import: <code>parts</code>, <code>colors</code>, <code>part_categories</code>,
+        <code>part_relationships</code> als <code>.csv</code> oder <code>.csv.gz</code> von rebrickable.com/downloads.</p>
+
+      <div class="sheet-actions">
+        <button type="button" id="btn-settings-reset" class="btn">Standardwerte</button>
+        <button class="btn primary" value="save">Speichern</button>
+      </div>
+      <p class="muted small" id="app-version"></p>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>

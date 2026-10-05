@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LEGO-Teilefinder</title>
+  <meta name="description" content="Findet gesuchte LEGO-Teile auf einem Foto.">
+  <meta name="theme-color" content="#1e293b">
+  <!-- iOS / iPadOS: Vollbild-App vom Home-Bildschirm -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Teilefinder">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>LEGO-Teilefinder</h1>
+    <button id="btn-settings" class="icon-btn" aria-label="Einstellungen" title="Einstellungen">⚙︎</button>
+  </header>
+
+  <!-- Hinweis-Banner (Daten laden, Updates, Fehler) -->
+  <div id="banner" class="banner" hidden></div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="search" role="tab">1 · Suchliste</button>
+    <button class="tab" data-tab="photo" role="tab">2 · Foto</button>
+    <button class="tab" data-tab="analyze" role="tab">3 · Analyse</button>
+    <button class="tab" data-tab="result" role="tab">4 · Ergebnis</button>
+  </nav>
+
+  <main>
+    <!-- ============ Schritt 1: Suchteile festlegen ============ -->
+    <section id="tab-search" class="panel active">
+      <div class="card">
+        <div class="seg" role="group" aria-label="Suchart">
+          <button class="seg-btn active" data-mode="text">Per Text</button>
+          <button class="seg-btn" data-mode="photo" disabled title="Kommt in Etappe 4">Per Beispielfoto</button>
+        </div>
+
+        <div id="search-text">
+          <input id="search-input" type="search" inputmode="search" autocomplete="off" autocorrect="off"
+                 autocapitalize="off" spellcheck="false"
+                 placeholder="Teilenummer oder Name, z. B. 3001 oder brick 2x4">
+          <label class="check">
+            <input id="hide-prints" type="checkbox" checked> Bedruckte Varianten ausblenden
+          </label>
+          <div id="search-status" class="muted small"></div>
+          <ul id="search-results" class="result-list"></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Suchliste</h2>
+          <button id="btn-clear-list" class="btn-link">Leeren</button>
+        </div>
+        <ul id="wish-list" class="wish-list"></ul>
+        <p id="wish-empty" class="muted">Noch keine Teile in der Suchliste. Suche oben ein Teil und tippe es an.</p>
+      </div>
+    </section>
+
+    <!-- ============ Schritt 2: Foto ============ -->
+    <section id="tab-photo" class="panel">
+      <div class="card">
+        <h2>Foto aufnehmen</h2>
+        <p class="muted">Kommt in Etappe 2.</p>
+        <div class="tips">
+          <strong>Aufnahmetipps</strong>
+          <ul>
+            <li>Einfarbiger, matter Hintergrund, der sich deutlich von den Teilen abhebt (helle Teile → dunkler Hintergrund).</li>
+            <li>Gleichmäßiges Licht von oben, keine harten Schatten, kein Blitz.</li>
+            <li>Senkrecht von oben fotografieren, ganze Fläche im Bild, nicht zu weit weg.</li>
+            <li>Teile nicht stapeln; Berühren ist okay, Überlappen nicht.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Schritt 3: Analyse ============ -->
+    <section id="tab-analyze" class="panel">
+      <div class="card"><h2>Analyse</h2><p class="muted">Kommt in Etappe 2–4.</p></div>
+    </section>
+
+    <!-- ============ Schritt 4: Ergebnis ============ -->
+    <section id="tab-result" class="panel">
+      <div class="card"><h2>Ergebnis</h2><p class="muted">Kommt in Etappe 5.</p></div>
+    </section>
+  </main>
+
+  <!-- ============ Dialog: Teil + Farbe wählen ============ -->
+  <dialog id="dlg-part" class="sheet">
+    <form method="dialog" class="sheet-inner">
+      <div class="sheet-head">
+        <h2 id="dp-title">Teil</h2>
+        <button class="icon-btn" value="cancel" aria-label="Schließen">✕</button>
+      </div>
+      <div class="part-hero">
+        <img id="dp-img" alt="" width="120" height="120">
+        <div>
+          <div id="dp-num" class="mono big"></div>
+          <div id="dp-name"></div>
+          <div id="dp-cat" class="muted small"></div>
+          <div id="dp-rel" class="muted small"></div>
+        </div>
+      </div>
+
+      <h3>Farbe</h3>
+      <input id="dp-color-filter" type="search" placeholder="Farbe filtern, z. B. red, gray, trans" autocomplete="off" autocorrect="off" autocapitalize="off">
+      <div id="dp-color-selected" class="color-selected"></div>
+      <div id="dp-colors" class="color-grid"></div>
+
+      <h3>Menge <span class="muted small">(optional)</span></h3>
+      <div class="qty">
+        <button type="button" class="btn" data-qty="-1">−</button>
+        <input id="dp-qty" type="number" inputmode="numeric" min="0" placeholder="beliebig">
+        <button type="button" class="btn" data-qty="1">+</button>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn" value="cancel">Abbrechen</button>
+        <button id="dp-add" class="btn primary" value="add">Zur Suchliste</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ Dialog: Einstellungen ============ -->
+  <dialog id="dlg-settings" class="sheet">
+    <form method="dialog" class="sheet-inner">
+      <div class="sheet-head">
+        <h2>Einstellungen</h2>
+        <button class="icon-btn" value="cancel" aria-label="Schließen">✕</button>
+      </div>
+
+      <h3>Erkennung</h3>
+      <label class="field">Modus
+        <select id="set-mode">
+          <option value="normal">Normal (100–300 Teile)</option>
+          <option value="small">Kleine Menge (50–100 Teile, strenger)</option>
+        </select>
+      </label>
+      <label class="field">Kachel-Modus
+        <select id="set-tiles">
+          <option value="1">Aus (ganzes Bild)</option>
+          <option value="2">2 × 2</option>
+          <option value="3">3 × 3</option>
+        </select>
+      </label>
+      <label class="check"><input id="set-checkall" type="checkbox"> Alle Ausschnitte prüfen (langsamer, mehr API-Last)</label>
+      <label class="check"><input id="set-debug" type="checkbox"> Debug-Ansicht anzeigen</label>
+
+      <h3>Brickognize</h3>
+      <label class="field">API-/Proxy-URL
+        <input id="set-api" type="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </label>
+      <label class="field">Parallele Anfragen
+        <input id="set-parallel" type="number" min="1" max="6" inputmode="numeric">
+      </label>
+      <label class="field">Score „sicher“ ab
+        <input id="set-sure" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+      </label>
+      <label class="field">Score „unsicher“ ab
+        <input id="set-unsure" type="number" min="0" max="1" step="0.05" inputmode="decimal">
+      </label>
+
+      <h3>Teiledaten (Rebrickable)</h3>
+      <div id="data-status" class="muted small"></div>
+      <div class="btn-row">
+        <button type="button" id="btn-data-reload" class="btn">Neu laden</button>
+        <label class="btn">Dateien importieren …
+          <input id="data-import" type="file" multiple accept=".csv,.gz,text/csv,application/gzip" hidden>
+        </label>
+      </div>
+      <p class="muted small">Import: <code>parts</code>, <code>colors</code>, <code>part_categories</code>,
+        <code>part_relationships</code> als <code>.csv</code> oder <code>.csv.gz</code> von rebrickable.com/downloads.</p>
+
+      <div class="sheet-actions">
+        <button type="button" id="btn-settings-reset" class="btn">Standardwerte</button>
+        <button class="btn primary" value="save">Speichern</button>
+      </div>
+      <p class="muted small" id="app-version"></p>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>

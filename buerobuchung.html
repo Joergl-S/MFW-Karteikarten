@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Büro">
+<meta name="theme-color" content="#2196F3">
+<title>Büro-Buchungen</title>
+<style>
+  :root {
+    --blue: #2196F3;
+    --blue-dark: #1769aa;
+    --blue-soft: #e3f2fd;
+    --green: #43a047;
+    --red: #c0392b;
+    --amber-bg: #fff3cd;
+    --amber-border: #ffe08a;
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --border: #e0e0e0;
+    --text: #222;
+    --text-light: #6b6b6b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --blue-soft: #16324a;
+      --amber-bg: #3a3214;
+      --amber-border: #6b5a1d;
+      --bg: #121417;
+      --card: #1d2025;
+      --border: #30343b;
+      --text: #ececec;
+      --text-light: #a0a4ab;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  }
+  header {
+    background: var(--blue);
+    color: #fff;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.4rem; }
+  header p { margin: 0; font-size: 0.85rem; opacity: 0.9; }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 12px max(12px, env(safe-area-inset-left, 0px)) 12px max(12px, env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card h2 {
+    margin: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .step {
+    display: inline-grid;
+    place-items: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .hint { margin: 0; font-size: 0.85rem; color: var(--text-light); line-height: 1.45; }
+  label { font-size: 0.85rem; font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+  label .sub { font-weight: 400; color: var(--text-light); }
+  input[type="text"], input[type="password"], input[type="date"], input[type="time"], select {
+    font: inherit;
+    font-size: 16px; /* verhindert Zoom auf iOS */
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    width: 100%;
+    min-width: 0;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 140px; min-width: 0; }
+  button {
+    font: inherit;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    background: var(--blue);
+    color: #fff;
+    font-weight: 600;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.secondary { background: var(--blue-soft); color: var(--blue-dark); }
+  @media (prefers-color-scheme: dark) { button.secondary { color: #9fd0ff; } }
+  button.link {
+    background: none; color: var(--blue); padding: 4px 0; font-weight: 500; font-size: 0.9rem;
+    align-self: flex-start;
+  }
+  .drop {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px 12px;
+    text-align: center;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+  .drop strong { color: var(--blue); }
+  .thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .thumb { position: relative; width: 84px; height: 140px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .thumb button {
+    position: absolute; top: 4px; right: 4px;
+    width: 26px; height: 26px; padding: 0; border-radius: 50%;
+    background: rgba(0,0,0,0.6); font-size: 0.9rem; line-height: 26px;
+  }
+  details summary { cursor: pointer; font-size: 0.9rem; color: var(--blue); font-weight: 600; }
+  details[open] summary { margin-bottom: 10px; }
+  details .inner { display: flex; flex-direction: column; gap: 12px; }
+  .notice {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+  .error { color: var(--red); font-size: 0.9rem; margin: 0; white-space: pre-wrap; }
+  .status { font-size: 0.9rem; color: var(--text-light); display: flex; align-items: center; gap: 8px; }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid var(--blue-soft); border-top-color: var(--blue);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
+  /* Ergebnisliste */
+  .days { display: flex; flex-direction: column; }
+  .day {
+    display: grid;
+    grid-template-columns: 26px 92px 1fr 32px;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .day:last-child { border-bottom: none; }
+  .day.off .date, .day.off input[type="text"] { opacity: 0.45; }
+  .day input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--green); margin: 0; }
+  .date { font-size: 0.9rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .date .wd { font-weight: 700; display: block; }
+  .date .dm { color: var(--text-light); font-size: 0.8rem; }
+  .day input[type="text"] { padding: 8px 10px; }
+  .day .del { background: none; color: var(--red); padding: 0; font-size: 1.2rem; }
+  .day.unsure input[type="text"] { border-color: #e0a800; }
+  .week-sep { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-light); padding: 12px 0 2px; font-weight: 600; }
+  .summary { font-size: 0.9rem; color: var(--text-light); }
+  .actions { display: flex; flex-direction: column; gap: 8px; }
+  .legend { font-size: 0.8rem; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0a800; border-radius: 4px; }
+  footer { text-align: center; font-size: 0.78rem; color: var(--text-light); padding: 8px 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Büro-Buchungen</h1>
+  <p>Screenshot vom Buchungskalender → Termine im Handy-Kalender</p>
+</header>
+
+<div class="wrap">
+
+  <!-- Einmalige Einrichtung -->
+  <section class="card" id="setup-card">
+    <h2><span class="step">⚙</span> Einrichtung</h2>
+    <div class="notice" id="key-notice" hidden>
+      Für die Bildanalyse wird einmalig ein <strong>Claude API-Schlüssel</strong> benötigt
+      (erstellen unter <span style="user-select:all">console.anthropic.com</span> → „API Keys“).
+      Er wird nur auf diesem Gerät gespeichert. Eine Analyse kostet ca. 1–2 Cent.
+    </div>
+    <details id="settings">
+      <summary>Einstellungen</summary>
+      <div class="inner">
+        <label>Claude API-Schlüssel
+          <input type="password" id="api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+        </label>
+        <label>Mein Name / Kürzel im Kalender <span class="sub">optional – falls der Screenshot Buchungen mehrerer Personen zeigt</span>
+          <input type="text" id="my-name" placeholder="z. B. J. Schmidt">
+        </label>
+        <label>Titel der Kalendereinträge <span class="sub"><code>{raum}</code> wird durch den Raum ersetzt</span>
+          <input type="text" id="title-tpl" value="Büro: {raum}">
+        </label>
+        <label>Uhrzeit
+          <select id="time-mode">
+            <option value="allday">Ganztägig</option>
+            <option value="timed">Mit Uhrzeit</option>
+          </select>
+        </label>
+        <div class="row" id="time-row" hidden>
+          <label>Von <input type="time" id="t-start" value="08:00"></label>
+          <label>Bis <input type="time" id="t-end" value="17:00"></label>
+        </div>
+        <label>Erinnerung
+          <select id="alarm">
+            <option value="">Keine</option>
+            <option value="-PT15M">15 Minuten vorher</option>
+            <option value="-PT1H">1 Stunde vorher</option>
+            <option value="-PT9H" data-allday="true">Am Vortag, 15:00 (bei ganztägig)</option>
+          </select>
+        </label>
+        <button class="secondary" id="save-settings" type="button">Einstellungen speichern</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- Schritt 1: Screenshot -->
+  <section class="card">
+    <h2><span class="step">1</span> Screenshot wählen</h2>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <div class="drop" id="drop" role="button" tabindex="0">
+      <strong>Screenshot auswählen</strong><br>
+      aus Fotos oder Dateien (auch mehrere)
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+    <label>Monat/Jahr <span class="sub">nur nötig, wenn es im Screenshot nicht zu sehen ist</span>
+      <input type="text" id="period-hint" placeholder="z. B. Dezember 2026">
+    </label>
+    <button id="analyze" type="button" disabled>Screenshot analysieren</button>
+    <div class="status" id="status" hidden><div class="spinner"></div><span>Analysiere Screenshot … (ca. 10–30 Sek.)</span></div>
+    <p class="error" id="error" hidden></p>
+  </section>
+
+  <!-- Schritt 2: Prüfen -->
+  <section class="card" id="result-card" hidden>
+    <h2><span class="step">2</span> Prüfen &amp; anpassen</h2>
+    <p class="hint">Nur Werktage (Mo–Fr). Häkchen entfernen, um einen Tag auszulassen. Raum antippen, um ihn zu ändern.</p>
+    <div class="legend" id="unsure-legend" hidden><i></i> unsicher erkannt – bitte prüfen</div>
+    <div class="days" id="days"></div>
+    <button class="link" id="add-day" type="button">+ Tag hinzufügen</button>
+    <div class="row" id="add-row" hidden>
+      <input type="date" id="add-date">
+      <input type="text" id="add-room" placeholder="Raum">
+      <button class="secondary" id="add-confirm" type="button">Hinzufügen</button>
+    </div>
+  </section>
+
+  <!-- Schritt 3: Exportieren -->
+  <section class="card" id="export-card" hidden>
+    <h2><span class="step">3</span> In den Kalender übernehmen</h2>
+    <p class="summary" id="summary"></p>
+    <div class="actions">
+      <button id="export" type="button">Zum Kalender hinzufügen</button>
+      <button class="secondary" id="share" type="button" hidden>Teilen … (an Kalender-App senden)</button>
+    </div>
+    <p class="hint">iPhone: In Safari öffnet sich „Alle hinzufügen“. Android: Die heruntergeladene Datei
+      <code>buero-buchungen.ics</code> antippen und mit Google Kalender öffnen.</p>
+  </section>
+
+  <footer>Screenshots werden nur zur Analyse an Claude gesendet und nicht gespeichert.</footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MODEL = 'claude-sonnet-5-5';
+  const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+  let images = [];   // {blob, url, mediaType}
+  let days = [];     // {date: 'YYYY-MM-DD', room, on, unsure}
+
+  // ---------- Einstellungen ----------
+  const store = {
+    get(k, d = '') { try { return localStorage.getItem('bb_' + k) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('bb_' + k, v); } catch {} }
+  };
+  const fields = ['api-key', 'my-name', 'title-tpl', 'time-mode', 't-start', 't-end', 'alarm'];
+  fields.forEach(f => { const v = store.get(f, null); if (v !== null) $(f).value = v; });
+
+  function syncSettingsUI() {
+    const hasKey = !!$('api-key').value.trim();
+    $('key-notice').hidden = hasKey;
+    if (!hasKey) $('settings').open = true;
+    $('time-row').hidden = $('time-mode').value !== 'timed';
+    updateAnalyzeBtn();
+  }
+  $('time-mode').addEventListener('change', syncSettingsUI);
+  $('save-settings').addEventListener('click', () => {
+    fields.forEach(f => store.set(f, $(f).value.trim()));
+    syncSettingsUI();
+    if ($('api-key').value.trim()) $('settings').open = false;
+    renderSummary();
+  });
+  $('api-key').addEventListener('input', updateAnalyzeBtn);
+
+  // ---------- Bilder ----------
+  $('drop').addEventListener('click', () => $('file').click());
+  $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
+  $('drop').addEventListener('dragover', e => e.preventDefault());
+  $('drop').addEventListener('drop', e => { e.preventDefault(); addFiles(e.dataTransfer.files); });
+  $('file').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+  document.addEventListener('paste', e => {
+    const files = [...(e.clipboardData?.items || [])].filter(i => i.type.startsWith('image/')).map(i => i.getAsFile());
+    if (files.length) addFiles(files);
+  });
+
+  async function addFiles(fileList) {
+    for (const f of fileList) {
+      if (!f || !f.type.startsWith('image/')) continue;
+      try {
+        const blob = await shrink(f);
+        images.push({ blob, url: URL.createObjectURL(blob) });
+      } catch { showError('Das Bild konnte nicht gelesen werden. Bitte als PNG oder JPG wählen.'); }
+    }
+    renderThumbs();
+  }
+
+  // Verkleinert auf max. 1568 px (lange Seite) – so viel nutzt Claude ohnehin.
+  function shrink(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1568;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        c.toBlob(b => b ? resolve(b) : reject(), 'image/jpeg', 0.9);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  function renderThumbs() {
+    const box = $('thumbs');
+    box.innerHTML = '';
+    images.forEach((im, i) => {
+      const d = document.createElement('div');
+      d.className = 'thumb';
+      d.innerHTML = `<img alt="Screenshot ${i + 1}"><button type="button" aria-label="Entfernen">✕</button>`;
+      d.querySelector('img').src = im.url;
+      d.querySelector('button').onclick = () => { URL.revokeObjectURL(im.url); images.splice(i, 1); renderThumbs(); };
+      box.appendChild(d);
+    });
+    updateAnalyzeBtn();
+  }
+
+  function updateAnalyzeBtn() {
+    $('analyze').disabled = !images.length || !$('api-key').value.trim();
+  }
+
+  // ---------- Analyse ----------
+  const blobToBase64 = blob => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+
+  function buildPrompt() {
+    const today = new Date();
+    const name = $('my-name').value.trim();
+    const period = $('period-hint').value.trim();
+    return `Die Bilder sind Screenshots aus einem Kalender bzw. Raumbuchungs-System. Darin ist zu sehen, an welchen Tagen ich in welchem Büroraum (Raum, Arbeitsplatz, Desk, Etage o. ä.) gebucht bin.
+
+Heutiges Datum: ${today.toISOString().slice(0, 10)} (${WD_LONG[today.getDay()]}).
+${period ? `Der Zeitraum im Screenshot ist: ${period}.` : 'Leite Monat und Jahr aus dem Screenshot ab. Fehlt das Jahr, nimm das Jahr, bei dem die Wochentage zu den Daten passen und das am nächsten zum heutigen Datum liegt.'}
+${name ? `Ich bin "${name}". Falls Buchungen mehrerer Personen zu sehen sind, nimm nur meine.` : ''}
+
+Aufgabe: Lies für jeden Werktag (Montag bis Freitag), an dem eine Buchung zu sehen ist, das Datum und die Raumbezeichnung aus. Übernimm die Raumbezeichnung so, wie sie im Screenshot steht (z. B. "3.14", "Raum Elbe", "Desk 2-07"). Ignoriere Wochenenden und Tage ohne Buchung. Prüfe, dass Datum und Wochentag zusammenpassen.
+
+Antworte ausschließlich mit JSON in genau diesem Format, ohne weiteren Text:
+{"bookings":[{"date":"YYYY-MM-DD","room":"Raumbezeichnung","unsure":false}]}
+Setze "unsure": true, wenn Datum oder Raum schlecht lesbar oder geraten ist. Wenn keine Buchungen erkennbar sind, antworte mit {"bookings":[],"reason":"kurze Begründung auf Deutsch"}.`;
+  }
+
+  $('analyze').addEventListener('click', async () => {
+    hideError();
+    $('analyze').disabled = true;
+    $('status').hidden = false;
+    try {
+      const content = [];
+      for (const im of images) {
+        content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await blobToBase64(im.blob) } });
+      }
+      content.push({ type: 'text', text: buildPrompt() });
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': $('api-key').value.trim(),
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error?.message || res.statusText;
+        if (res.status === 401) throw new Error('Der API-Schlüssel ist ungültig. Bitte in den Einstellungen prüfen.');
+        if (res.status === 429) throw new Error('Zu viele Anfragen oder Guthaben aufgebraucht. Bitte später erneut versuchen.');
+        throw new Error('Fehler bei der Analyse (' + res.status + '): ' + msg);
+      }
+      const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+      const parsed = parseJson(text);
+      if (!parsed || !Array.isArray(parsed.bookings)) throw new Error('Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.');
+
+      const found = parsed.bookings
+        .filter(b => /^\d{4}-\d{2}-\d{2}$/.test(b.date) && isWeekday(b.date))
+        .map(b => ({ date: b.date, room: String(b.room || '').trim(), on: !!String(b.room || '').trim(), unsure: !!b.unsure }));
+
+      if (!found.length) throw new Error('Im Screenshot wurden keine Buchungen an Werktagen gefunden.' + (parsed.reason ? '\n' + parsed.reason : ''));
+
+      // Mit bereits vorhandenen Tagen zusammenführen (neue Analyse überschreibt gleiche Daten)
+      const map = new Map(days.map(d => [d.date, d]));
+      found.forEach(d => map.set(d.date, d));
+      days = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+      renderDays();
+      $('result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      showError(e.message === 'Failed to fetch' ? 'Keine Verbindung zu Claude. Bitte Internetverbindung prüfen.' : e.message);
+    } finally {
+      $('status').hidden = true;
+      updateAnalyzeBtn();
+    }
+  });
+
+  function parseJson(text) {
+    try { return JSON.parse(text); } catch {}
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) { try { return JSON.parse(fence[1]); } catch {} }
+    const s = text.indexOf('{'), e = text.lastIndexOf('}');
+    if (s >= 0 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch {} }
+    return null;
+  }
+
+  const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const isWeekday = s => { const w = parseDate(s).getDay(); return w >= 1 && w <= 5; };
+  const isoWeek = dt => {
+    const d = new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()));
+    const day = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - day);
+    const y0 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d - y0) / 86400000 + 1) / 7);
+  };
+
+  // ---------- Liste ----------
+  function renderDays() {
+    const box = $('days');
+    box.innerHTML = '';
+    let lastWeek = null;
+    days.forEach((d, i) => {
+      const dt = parseDate(d.date);
+      const kw = isoWeek(dt);
+      if (kw !== lastWeek) {
+        const sep = document.createElement('div');
+        sep.className = 'week-sep';
+        sep.textContent = 'KW ' + kw;
+        box.appendChild(sep);
+        lastWeek = kw;
+      }
+      const row = document.createElement('div');
+      row.className = 'day' + (d.on ? '' : ' off') + (d.unsure ? ' unsure' : '');
+      row.innerHTML = `
+        <input type="checkbox" id="on-${d.date}" aria-label="Tag übernehmen">
+        <label class="date" for="on-${d.date}"><span class="wd">${WD[dt.getDay()]}</span><span class="dm">${dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span></label>
+        <input type="text" id="room-${d.date}" aria-label="Raum" placeholder="Raum">
+        <button class="del" type="button" aria-label="Tag entfernen">✕</button>`;
+      const cb = row.querySelector('input[type="checkbox"]');
+      const tx = row.querySelector('input[type="text"]');
+      cb.checked = d.on;
+      tx.value = d.room;
+      cb.onchange = () => { d.on = cb.checked; row.classList.toggle('off', !d.on); renderSummary(); };
+      tx.oninput = () => {
+        d.room = tx.value; d.unsure = false; row.classList.remove('unsure');
+        if (tx.value.trim() && !d.on) { d.on = true; cb.checked = true; row.classList.remove('off'); }
+        renderSummary();
+      };
+      row.querySelector('.del').onclick = () => { days.splice(i, 1); renderDays(); };
+      box.appendChild(row);
+    });
+    $('unsure-legend').hidden = !days.some(d => d.unsure);
+    $('result-card').hidden = $('export-card').hidden = !days.length;
+    renderSummary();
+  }
+
+  $('add-day').onclick = () => { $('add-row').hidden = false; $('add-date').focus(); };
+  $('add-confirm').onclick = () => {
+    const date = $('add-date').value, room = $('add-room').value.trim();
+    if (!date) return;
+    if (!isWeekday(date)) { showError('Bitte einen Werktag (Mo–Fr) wählen.'); return; }
+    hideError();
+    days = days.filter(d => d.date !== date);
+    days.push({ date, room, on: !!room, unsure: false });
+    days.sort((a, b) => a.date.localeCompare(b.date));
+    $('add-date').value = ''; $('add-room').value = ''; $('add-row').hidden = true;
+    renderDays();
+  };
+
+  const selected = () => days.filter(d => d.on && d.room.trim());
+
+  function renderSummary() {
+    const sel = selected();
+    $('summary').textContent = sel.length
+      ? `${sel.length} ${sel.length === 1 ? 'Termin' : 'Termine'} vom ${fmt(sel[0].date)} bis ${fmt(sel[sel.length - 1].date)}`
+      : 'Keine Tage ausgewählt.';
+    $('export').disabled = !sel.length;
+    $('share').disabled = !sel.length;
+  }
+  const fmt = s => parseDate(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+
+  // ---------- ICS ----------
+  const icsEscape = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  function fold(line) {
+    // Zeilen nach RFC 5545 auf max. 75 Bytes umbrechen
+    const enc = new TextEncoder();
+    if (enc.encode(line).length <= 75) return line;
+    const out = []; let cur = '';
+    for (const ch of line) {
+      if (enc.encode(cur + ch).length > (out.length ? 74 : 75)) { out.push(cur); cur = ''; }
+      cur += ch;
+    }
+    out.push(cur);
+    return out.join('\r\n ');
+  }
+  const ymd = s => s.replace(/-/g, '');
+  const nextDay = s => { const d = parseDate(s); d.setDate(d.getDate() + 1); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`; };
+
+  function buildIcs() {
+    const tpl = $('title-tpl').value.trim() || 'Büro: {raum}';
+    const timed = $('time-mode').value === 'timed';
+    const ts = $('t-start').value || '08:00', te = $('t-end').value || '17:00';
+    const alarm = $('alarm').value;
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//MFW//Buero-Buchungen//DE', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    for (const d of selected()) {
+      const room = d.room.trim();
+      lines.push('BEGIN:VEVENT');
+      lines.push(`UID:buero-${ymd(d.date)}@buerobuchung`);
+      lines.push(`DTSTAMP:${stamp}`);
+      if (timed) {
+        lines.push(`DTSTART:${ymd(d.date)}T${ts.replace(':', '')}00`);
+        lines.push(`DTEND:${ymd(d.date)}T${te.replace(':', '')}00`);
+      } else {
+        lines.push(`DTSTART;VALUE=DATE:${ymd(d.date)}`);
+        lines.push(`DTEND;VALUE=DATE:${nextDay(d.date)}`);
+      }
+      lines.push(`SUMMARY:${icsEscape(tpl.replace(/\{raum\}/gi, room))}`);
+      lines.push(`LOCATION:${icsEscape(room)}`);
+      lines.push('TRANSP:TRANSPARENT');
+      if (alarm) {
+        lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape('Büro: ' + room)}`, `TRIGGER:${alarm}`, 'END:VALARM');
+      }
+      lines.push('END:VEVENT');
+    }
+    lines.push('END:VCALENDAR');
+    return lines.map(fold).join('\r\n') + '\r\n';
+  }
+
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  $('export').addEventListener('click', () => {
+    const ics = buildIcs();
+    if (isIOS) {
+      // Safari zeigt bei text/calendar direkt den Dialog „Alle hinzufügen“
+      location.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = 'buero-buchungen.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  });
+
+  // Teilen (z. B. direkt an Google Kalender / Outlook)
+  try {
+    const probe = new File(['x'], 'x.ics', { type: 'text/calendar' });
+    if (navigator.canShare && navigator.canShare({ files: [probe] })) $('share').hidden = false;
+  } catch {}
+  $('share').addEventListener('click', async () => {
+    const file = new File([buildIcs()], 'buero-buchungen.ics', { type: 'text/calendar' });
+    try { await navigator.share({ files: [file], title: 'Büro-Buchungen' }); } catch {}
+  });
+
+  // ---------- Hilfen ----------
+  function showError(msg) { $('error').textContent = msg; $('error').hidden = false; }
+  function hideError() { $('error').hidden = true; }
+
+  syncSettingsUI();
+})();
+</script>
+</body>
+</html>

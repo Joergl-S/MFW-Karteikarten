@@ -187,6 +187,7 @@
   .actions { display: flex; flex-direction: column; gap: 8px; }
   .legend { font-size: 0.8rem; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
   .legend i { display: inline-block; width: 14px; height: 14px; border: 2px solid #e0a800; border-radius: 4px; }
+  pre { font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 8px; margin: 0; }
   footer { text-align: center; font-size: 0.78rem; color: var(--text-light); padding: 8px 16px; }
 </style>
 </head>
@@ -202,19 +203,12 @@
   <!-- Einmalige Einrichtung -->
   <section class="card" id="setup-card">
     <h2><span class="step">⚙</span> Einrichtung</h2>
-    <div class="notice" id="key-notice" hidden>
-      Für die Bildanalyse wird einmalig ein <strong>Claude API-Schlüssel</strong> benötigt
-      (erstellen unter <span style="user-select:all">console.anthropic.com</span> → „API Keys“).
-      Er wird nur auf diesem Gerät gespeichert. Eine Analyse kostet ca. 1–2 Cent.
-    </div>
+    <p class="hint">Die Texterkennung läuft komplett auf diesem Gerät. Der Screenshot wird nirgendwohin hochgeladen.</p>
     <details id="settings">
       <summary>Einstellungen</summary>
       <div class="inner">
-        <label>Claude API-Schlüssel
-          <input type="password" id="api-key" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-        </label>
-        <label>Mein Name / Kürzel im Kalender <span class="sub">optional – falls der Screenshot Buchungen mehrerer Personen zeigt</span>
-          <input type="text" id="my-name" placeholder="z. B. J. Schmidt">
+        <label>Meine Räume <span class="sub">empfohlen – kommagetrennt, z. B. „3.14, 3.15, Raum Elbe, Desk 2-07“. Dann werden genau diese Namen im Screenshot gesucht.</span>
+          <input type="text" id="known-rooms" placeholder="z. B. 3.14, 3.15, Raum Elbe" spellcheck="false">
         </label>
         <label>Titel der Kalendereinträge <span class="sub"><code>{raum}</code> wird durch den Raum ersetzt</span>
           <input type="text" id="title-tpl" value="Büro: {raum}">
@@ -255,8 +249,12 @@
       <input type="text" id="period-hint" placeholder="z. B. Dezember 2026">
     </label>
     <button id="analyze" type="button" disabled>Screenshot analysieren</button>
-    <div class="status" id="status" hidden><div class="spinner"></div><span>Analysiere Screenshot … (ca. 10–30 Sek.)</span></div>
+    <div class="status" id="status" hidden><div class="spinner"></div><span id="status-text">Lese Text …</span></div>
     <p class="error" id="error" hidden></p>
+    <details id="ocr-details" hidden>
+      <summary>Erkannter Text anzeigen</summary>
+      <pre id="ocr-text"></pre>
+    </details>
   </section>
 
   <!-- Schritt 2: Prüfen -->
@@ -285,17 +283,16 @@
       <code>buero-buchungen.ics</code> antippen und mit Google Kalender öffnen.</p>
   </section>
 
-  <footer>Screenshots werden nur zur Analyse an Claude gesendet und nicht gespeichert.</footer>
+  <footer>Alles passiert lokal auf dem Gerät. Texterkennung: Tesseract (Open Source).</footer>
 </div>
 
+<script src="ocr/tesseract.min.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const MODEL = 'claude-sonnet-5-5';
   const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-  const WD_LONG = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
-  let images = [];   // {blob, url, mediaType}
+  let images = [];   // {blob, url}
   let days = [];     // {date: 'YYYY-MM-DD', room, on, unsure}
 
   // ---------- Einstellungen ----------
@@ -303,13 +300,10 @@
     get(k, d = '') { try { return localStorage.getItem('bb_' + k) ?? d; } catch { return d; } },
     set(k, v) { try { localStorage.setItem('bb_' + k, v); } catch {} }
   };
-  const fields = ['api-key', 'my-name', 'title-tpl', 'time-mode', 't-start', 't-end', 'alarm'];
+  const fields = ['known-rooms', 'title-tpl', 'time-mode', 't-start', 't-end', 'alarm'];
   fields.forEach(f => { const v = store.get(f, null); if (v !== null) $(f).value = v; });
 
   function syncSettingsUI() {
-    const hasKey = !!$('api-key').value.trim();
-    $('key-notice').hidden = hasKey;
-    if (!hasKey) $('settings').open = true;
     $('time-row').hidden = $('time-mode').value !== 'timed';
     updateAnalyzeBtn();
   }
@@ -317,10 +311,9 @@
   $('save-settings').addEventListener('click', () => {
     fields.forEach(f => store.set(f, $(f).value.trim()));
     syncSettingsUI();
-    if ($('api-key').value.trim()) $('settings').open = false;
+    $('settings').open = false;
     renderSummary();
   });
-  $('api-key').addEventListener('input', updateAnalyzeBtn);
 
   // ---------- Bilder ----------
   $('drop').addEventListener('click', () => $('file').click());
@@ -337,20 +330,22 @@
     for (const f of fileList) {
       if (!f || !f.type.startsWith('image/')) continue;
       try {
-        const blob = await shrink(f);
+        const blob = await prepare(f);
         images.push({ blob, url: URL.createObjectURL(blob) });
       } catch { showError('Das Bild konnte nicht gelesen werden. Bitte als PNG oder JPG wählen.'); }
     }
     renderThumbs();
   }
 
-  // Verkleinert auf max. 1568 px (lange Seite) – so viel nutzt Claude ohnehin.
-  function shrink(file) {
+  // Bereitet das Bild für die Texterkennung vor: Graustufen, kräftiger Kontrast,
+  // kleine Bilder werden vergrößert (Tesseract liest größere Schrift zuverlässiger).
+  function prepare(file) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const max = 1568;
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const long = Math.max(img.width, img.height);
+        let scale = img.width < 1000 ? 2 : 1;
+        if (long * scale > 4000) scale = 4000 / long;
         const c = document.createElement('canvas');
         c.width = Math.round(img.width * scale);
         c.height = Math.round(img.height * scale);
@@ -359,7 +354,19 @@
         ctx.fillRect(0, 0, c.width, c.height);
         ctx.drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(img.src);
-        c.toBlob(b => b ? resolve(b) : reject(), 'image/jpeg', 0.9);
+        const id = ctx.getImageData(0, 0, c.width, c.height), px = id.data;
+        // Helligkeit messen, damit auch dunkle Kalender (Dark Mode) funktionieren
+        let sum = 0;
+        for (let i = 0; i < px.length; i += 4) sum += 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        const invert = sum / (px.length / 4) < 110;
+        for (let i = 0; i < px.length; i += 4) {
+          let g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+          if (invert) g = 255 - g;
+          g = Math.max(0, Math.min(255, (g - 128) * 1.4 + 140));
+          px[i] = px[i + 1] = px[i + 2] = g;
+        }
+        ctx.putImageData(id, 0, 0);
+        c.toBlob(b => b ? resolve(b) : reject(), 'image/png');
       };
       img.onerror = reject;
       img.src = URL.createObjectURL(file);
@@ -381,93 +388,251 @@
   }
 
   function updateAnalyzeBtn() {
-    $('analyze').disabled = !images.length || !$('api-key').value.trim();
+    $('analyze').disabled = !images.length || !window.Tesseract;
   }
 
-  // ---------- Analyse ----------
-  const blobToBase64 = blob => new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result).split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(blob);
-  });
-
-  function buildPrompt() {
-    const today = new Date();
-    const name = $('my-name').value.trim();
-    const period = $('period-hint').value.trim();
-    return `Die Bilder sind Screenshots aus einem Kalender bzw. Raumbuchungs-System. Darin ist zu sehen, an welchen Tagen ich in welchem Büroraum (Raum, Arbeitsplatz, Desk, Etage o. ä.) gebucht bin.
-
-Heutiges Datum: ${today.toISOString().slice(0, 10)} (${WD_LONG[today.getDay()]}).
-${period ? `Der Zeitraum im Screenshot ist: ${period}.` : 'Leite Monat und Jahr aus dem Screenshot ab. Fehlt das Jahr, nimm das Jahr, bei dem die Wochentage zu den Daten passen und das am nächsten zum heutigen Datum liegt.'}
-${name ? `Ich bin "${name}". Falls Buchungen mehrerer Personen zu sehen sind, nimm nur meine.` : ''}
-
-Aufgabe: Lies für jeden Werktag (Montag bis Freitag), an dem eine Buchung zu sehen ist, das Datum und die Raumbezeichnung aus. Übernimm die Raumbezeichnung so, wie sie im Screenshot steht (z. B. "3.14", "Raum Elbe", "Desk 2-07"). Ignoriere Wochenenden und Tage ohne Buchung. Prüfe, dass Datum und Wochentag zusammenpassen.
-
-Antworte ausschließlich mit JSON in genau diesem Format, ohne weiteren Text:
-{"bookings":[{"date":"YYYY-MM-DD","room":"Raumbezeichnung","unsure":false}]}
-Setze "unsure": true, wenn Datum oder Raum schlecht lesbar oder geraten ist. Wenn keine Buchungen erkennbar sind, antworte mit {"bookings":[],"reason":"kurze Begründung auf Deutsch"}.`;
+  // ---------- Texterkennung (lokal) ----------
+  let workerPromise = null;
+  function getWorker() {
+    if (!workerPromise) {
+      const base = new URL('ocr/', location.href).href;
+      workerPromise = Tesseract.createWorker('deu', 1, {
+        workerPath: base + 'worker.min.js',
+        corePath: base,
+        langPath: base.replace(/\/$/, ''),
+        workerBlobURL: false,
+        logger: m => {
+          if (m.status === 'recognizing text') setStatus(`Lese Text … ${Math.round(m.progress * 100)} %`);
+          else if (/load|initializ/.test(m.status)) setStatus('Starte Texterkennung (beim ersten Mal ein paar Sekunden) …');
+        }
+      }).catch(e => { workerPromise = null; throw e; });
+    }
+    return workerPromise;
   }
+  const setStatus = t => { $('status-text').textContent = t; };
 
   $('analyze').addEventListener('click', async () => {
     hideError();
     $('analyze').disabled = true;
     $('status').hidden = false;
+    setStatus('Starte Texterkennung …');
     try {
-      const content = [];
-      for (const im of images) {
-        content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: await blobToBase64(im.blob) } });
+      const worker = await getWorker();
+      const found = [];
+      const texts = [];
+      for (let i = 0; i < images.length; i++) {
+        if (images.length > 1) setStatus(`Lese Screenshot ${i + 1} von ${images.length} …`);
+        const { data } = await worker.recognize(images[i].blob);
+        texts.push(data.text);
+        found.push(...extractBookings(data));
       }
-      content.push({ type: 'text', text: buildPrompt() });
+      $('ocr-text').textContent = texts.join('\n\n———\n\n');
+      $('ocr-details').hidden = false;
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'x-api-key': $('api-key').value.trim(),
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role: 'user', content }] })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = data?.error?.message || res.statusText;
-        if (res.status === 401) throw new Error('Der API-Schlüssel ist ungültig. Bitte in den Einstellungen prüfen.');
-        if (res.status === 429) throw new Error('Zu viele Anfragen oder Guthaben aufgebraucht. Bitte später erneut versuchen.');
-        throw new Error('Fehler bei der Analyse (' + res.status + '): ' + msg);
+      const weekdays = found.filter(b => isWeekday(b.date));
+      if (!weekdays.length) {
+        throw new Error(lastProblem || 'Im Screenshot wurden keine Buchungen an Werktagen gefunden. Tipp: Unter „Einstellungen“ deine Raumnamen eintragen und unter „Erkannter Text anzeigen“ prüfen, was gelesen wurde.');
       }
-      const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-      const parsed = parseJson(text);
-      if (!parsed || !Array.isArray(parsed.bookings)) throw new Error('Die Antwort konnte nicht gelesen werden. Bitte erneut versuchen.');
-
-      const found = parsed.bookings
-        .filter(b => /^\d{4}-\d{2}-\d{2}$/.test(b.date) && isWeekday(b.date))
-        .map(b => ({ date: b.date, room: String(b.room || '').trim(), on: !!String(b.room || '').trim(), unsure: !!b.unsure }));
-
-      if (!found.length) throw new Error('Im Screenshot wurden keine Buchungen an Werktagen gefunden.' + (parsed.reason ? '\n' + parsed.reason : ''));
-
-      // Mit bereits vorhandenen Tagen zusammenführen (neue Analyse überschreibt gleiche Daten)
+      // Pro Datum nur eine Buchung; neue Analyse überschreibt gleiche Daten
       const map = new Map(days.map(d => [d.date, d]));
-      found.forEach(d => map.set(d.date, d));
+      const seen = new Set();
+      for (const b of weekdays) {
+        if (seen.has(b.date)) continue;
+        seen.add(b.date);
+        map.set(b.date, { date: b.date, room: b.room, on: !!b.room, unsure: b.unsure });
+      }
       days = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
       renderDays();
       $('result-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (e) {
-      showError(e.message === 'Failed to fetch' ? 'Keine Verbindung zu Claude. Bitte Internetverbindung prüfen.' : e.message);
+      showError(e?.message || 'Die Texterkennung konnte nicht gestartet werden. Bitte Seite neu laden.');
     } finally {
       $('status').hidden = true;
       updateAnalyzeBtn();
     }
   });
 
-  function parseJson(text) {
-    try { return JSON.parse(text); } catch {}
-    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (fence) { try { return JSON.parse(fence[1]); } catch {} }
-    const s = text.indexOf('{'), e = text.lastIndexOf('}');
-    if (s >= 0 && e > s) { try { return JSON.parse(text.slice(s, e + 1)); } catch {} }
+  // ---------- Auswertung des erkannten Texts ----------
+  const MONTHS = [
+    ['januar', 'jan', 'jänner'], ['februar', 'feb'], ['märz', 'maerz', 'mär', 'mrz', 'mar', 'march'],
+    ['april', 'apr'], ['mai', 'may'], ['juni', 'jun', 'june'], ['juli', 'jul', 'july'], ['august', 'aug'],
+    ['september', 'sept', 'sep'], ['oktober', 'okt', 'oct', 'october'], ['november', 'nov'], ['dezember', 'dez', 'dec', 'december']
+  ];
+  const MONTH_RE = 'jan(?:uar)?|jänner|feb(?:ruar)?|m(?:ä|ae)rz|mär|mrz|apr(?:il)?|mai|jun[i]?|jul[i]?|aug(?:ust)?|sep(?:t(?:ember)?)?|okt(?:ober)?|nov(?:ember)?|dez(?:ember)?';
+  function monthIndex(word) {
+    const w = String(word).toLowerCase().replace(/[^a-zäöü]/g, '');
+    if (w.length < 3) return 0;
+    for (let i = 0; i < 12; i++) {
+      if (MONTHS[i].includes(w) || (w.length >= 4 && MONTHS[i][0].startsWith(w))) return i + 1;
+    }
+    return 0;
+  }
+  const today = new Date();
+  // Jahr wählen, wenn keins zu sehen ist: das, bei dem das Datum am nächsten an heute liegt
+  function guessYear(m, d) {
+    let best = today.getFullYear(), bestDiff = Infinity;
+    for (const y of [best - 1, best, best + 1]) {
+      const diff = Math.abs(new Date(y, m - 1, d) - today);
+      if (diff < bestDiff) { bestDiff = diff; best = y; }
+    }
+    return best;
+  }
+  const iso = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const validDate = (y, m, d) => { const t = new Date(y, m - 1, d); return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d; };
+
+  function detectPeriod(text) {
+    const hint = $('period-hint').value.trim();
+    const src = hint || text;
+    let m = src.match(new RegExp(`(${MONTH_RE})[a-z.]*\\s*(\\d{4})`, 'i'));
+    if (m) return { m: monthIndex(m[1]), y: +m[2] };
+    m = src.match(/(?<!\d)(\d{1,2})\s*[./]\s*(20\d\d)(?!\d)/);
+    if (m && +m[1] >= 1 && +m[1] <= 12) return { m: +m[1], y: +m[2] };
+    m = src.match(new RegExp(`(?<![a-zäöü])(${MONTH_RE})(?![a-zäöü])`, 'i'));
+    if (m) { const mi = monthIndex(m[1]); return { m: mi, y: guessYear(mi, 15) }; }
     return null;
+  }
+
+  // Sucht einen Raum in einem Textstück.
+  function makeRoomFinder() {
+    const known = $('known-rooms').value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+    const norm = s => s.toLowerCase().replace(/\s+/g, '').replace(/,/g, '.').replace(/[–—]/g, '-');
+    if (known.length) {
+      const list = known.map(name => ({ name, n: norm(name) })).sort((a, b) => b.n.length - a.n.length);
+      return text => {
+        const t = norm(text);
+        for (const k of list) {
+          const esc = k.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(`(?<![0-9a-zäöü])${esc}(?![0-9a-zäöü])`).test(t)) return k.name;
+        }
+        return '';
+      };
+    }
+    const patterns = [
+      /\b(?:Raum|Room|Büro|Buero|Desk|Platz|Arbeitsplatz|Besprechungsraum|Meetingraum)\s*[-:#.]?\s*[A-Za-zÄÖÜäöü0-9][\w.\-\/]*(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?/i,
+      /\b[A-Z]{1,3}\s?\d{1,2}[.\-]\d{1,3}[a-z]?\b/,
+      /(?<![\d.])\d{1,2}[.\-]\d{2,3}[a-z]?(?![\d.])/
+    ];
+    return text => {
+      const clean = text
+        .replace(/(?<!\d)\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{2,4})?/g, ' ')  // Daten
+        .replace(/\b\d{1,2}[:.]\d{2}\s*(?:uhr|h)?\s*[-–]\s*\d{1,2}[:.]\d{2}/gi, ' ') // Uhrzeiten
+        .replace(/\b\d{1,2}:\d{2}\b/g, ' ');
+      for (const p of patterns) { const m = clean.match(p); if (m) return m[0].trim(); }
+      return '';
+    };
+  }
+
+  let lastProblem = '';
+
+  function extractBookings(data) {
+    lastProblem = '';
+    const findRoom = makeRoomFinder();
+    const lines = (data.lines || []).map(l => ({ text: l.text.trim(), conf: l.confidence })).filter(l => l.text);
+    const period = detectPeriod(data.text || '');
+
+    // Variante A: Liste mit ausgeschriebenen Daten („Mo 09.11.“, „Montag, 9. November 2026“)
+    const numRe = /(?<!\d)(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{4}|\d{2})(?!\d))?/;
+    const txtRe = new RegExp(`(?<!\\d)(\\d{1,2})\\.?\\s*(${MONTH_RE})[a-zä]*\\.?(?:\\s*(\\d{4}))?`, 'i');
+    const listResults = [];
+    let current = null;
+    for (const line of lines) {
+      let m = line.text.match(numRe), d, mo, y;
+      if (m) { d = +m[1]; mo = +m[2]; y = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : null; }
+      else if ((m = line.text.match(txtRe))) { d = +m[1]; mo = monthIndex(m[2]); y = m[3] ? +m[3] : null; }
+      if (m && mo >= 1 && mo <= 12) {
+        y = y || (period && period.m === mo ? period.y : guessYear(mo, d));
+        if (validDate(y, mo, d)) {
+          current = { date: iso(y, mo, d), room: '', unsure: false, linesLeft: 3 };
+          listResults.push(current);
+          const rest = line.text.replace(m[0], ' ');
+          const r = findRoom(rest);
+          if (r) { current.room = r; current.unsure = line.conf < 70; }
+          continue;
+        }
+      }
+      if (current && !current.room && current.linesLeft-- > 0) {
+        const r = findRoom(line.text);
+        if (r) { current.room = r; current.unsure = line.conf < 70; }
+      }
+    }
+    const listHits = listResults.filter(r => r.room);
+    if (listResults.length >= 2 && listHits.length) return listHits;
+
+    // Variante B: Monats- oder Wochenansicht als Raster (Tageszahl oben in der Zelle, Raum darunter)
+    const words = (data.words || []).map(w => ({
+      text: w.text.trim(), conf: w.confidence,
+      x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1,
+      cx: (w.bbox.x0 + w.bbox.x1) / 2, h: w.bbox.y1 - w.bbox.y0
+    })).filter(w => w.text);
+    const dayWords = words.filter(w => /^\d{1,2}\.?$/.test(w.text) && +w.text.replace('.', '') >= 1 && +w.text.replace('.', '') <= 31);
+    if (dayWords.length < 3) { lastProblem = listHits.length ? '' : ''; return listHits; }
+    if (!period) {
+      lastProblem = 'Der Monat ist im Screenshot nicht zu erkennen. Bitte oben „Monat/Jahr“ eintragen (z. B. „Dezember 2026“) und erneut analysieren.';
+      return listHits;
+    }
+
+    // Zeilen bilden
+    const medH = median(dayWords.map(w => w.h)) || 20;
+    const sorted = [...dayWords].sort((a, b) => a.y0 - b.y0);
+    const rows = [];
+    for (const w of sorted) {
+      const row = rows.find(r => Math.abs(r.y - w.y0) < medH * 0.7);
+      if (row) row.items.push(w); else rows.push({ y: w.y0, items: [w] });
+    }
+    rows.forEach(r => r.items.sort((a, b) => a.x0 - b.x0));
+    rows.sort((a, b) => a.y - b.y);
+    // Kalenderreihen mit nur einer Zahl sind meist keine Tageszahlen
+    const gridRows = rows.filter(r => r.items.length >= 2 || rows.length <= 2);
+
+    // Monat zuordnen (Vormonats-/Folgemonatstage am Rand berücksichtigen)
+    const ordered = gridRows.flatMap(r => r.items);
+    if (!ordered.length) return listHits;
+    let offset = +ordered[0].text.replace('.', '') > 20 ? -1 : 0, prev = null;
+    for (const w of ordered) {
+      const n = +w.text.replace('.', '');
+      if (prev !== null && n < prev && prev >= 20 && n <= 7) offset++;
+      prev = n;
+      const dt = new Date(period.y, period.m - 1 + offset, n);
+      w.date = iso(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    }
+
+    const gapsX = gridRows.flatMap(r => r.items.slice(1).map((w, i) => w.x0 - r.items[i].x0)).filter(g => g > medH);
+    const colW = median(gapsX) || (Math.max(...words.map(w => w.x1)) / 7);
+    const gapsY = gridRows.slice(1).map((r, i) => r.y - gridRows[i].y);
+    const rowH = median(gapsY) || Infinity;
+
+    // Jedes andere Wort der Zelle zuordnen, in der es steht
+    const cells = new Map();
+    const daySet = new Set(ordered);
+    for (const w of words) {
+      if (daySet.has(w)) continue;
+      const rowAbove = [...gridRows].reverse().find(r => r.y <= w.y0 + medH * 0.3 && w.y0 - r.y < rowH * 0.98);
+      if (!rowAbove) continue;
+      const cands = rowAbove.items.filter(d => d.x0 <= w.cx + colW * 0.3 && w.cx - d.x0 < colW);
+      if (!cands.length) continue;
+      const owner = cands[cands.length - 1];
+      if (!cells.has(owner)) cells.set(owner, []);
+      cells.get(owner).push(w);
+    }
+
+    const gridResults = [];
+    for (const [d, ws] of cells) {
+      ws.sort((a, b) => (Math.abs(a.y0 - b.y0) < medH * 0.5 ? a.x0 - b.x0 : a.y0 - b.y0));
+      const text = ws.map(w => w.text).join(' ');
+      const room = findRoom(text);
+      if (room) {
+        const conf = Math.min(...ws.map(w => w.conf));
+        gridResults.push({ date: d.date, room, unsure: conf < 70 });
+      }
+    }
+    gridResults.sort((a, b) => a.date.localeCompare(b.date));
+    return gridResults.length >= listHits.length ? gridResults : listHits;
+  }
+
+  function median(arr) {
+    if (!arr.length) return 0;
+    const s = [...arr].sort((a, b) => a - b);
+    return s[Math.floor(s.length / 2)];
   }
 
   const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };

@@ -207,8 +207,8 @@
     <details id="settings">
       <summary>Einstellungen</summary>
       <div class="inner">
-        <label>Meine Räume <span class="sub">empfohlen – kommagetrennt, z. B. „3.14, 3.15, Raum Elbe, Desk 2-07“. Dann werden genau diese Namen im Screenshot gesucht.</span>
-          <input type="text" id="known-rooms" placeholder="z. B. 3.14, 3.15, Raum Elbe" spellcheck="false">
+        <label>Weitere Räume <span class="sub">optional – „Cut 92“ und „VM-Cut 08“ (Cut/VM-Cut + Nummer) werden automatisch erkannt. Nur für andere Raumnamen hier kommagetrennt eintragen.</span>
+          <input type="text" id="known-rooms" placeholder="z. B. Raum Elbe, Studio 3" spellcheck="false">
         </label>
         <label>Titel der Kalendereinträge <span class="sub"><code>{raum}</code> wird durch den Raum ersetzt</span>
           <input type="text" id="title-tpl" value="Büro: {raum}">
@@ -260,7 +260,7 @@
   <!-- Schritt 2: Prüfen -->
   <section class="card" id="result-card" hidden>
     <h2><span class="step">2</span> Prüfen &amp; anpassen</h2>
-    <p class="hint">Nur Werktage (Mo–Fr). Häkchen entfernen, um einen Tag auszulassen. Raum antippen, um ihn zu ändern.</p>
+    <p class="hint">Nur Werktage (Mo–Fr). Vergangene Tage sind nicht angehakt. Häkchen setzen oder entfernen, um Tage zu übernehmen. Raum antippen, um ihn zu ändern.</p>
     <div class="legend" id="unsure-legend" hidden><i></i> unsicher erkannt – bitte prüfen</div>
     <div class="days" id="days"></div>
     <button class="link" id="add-day" type="button">+ Tag hinzufügen</button>
@@ -439,7 +439,7 @@
       for (const b of weekdays) {
         if (seen.has(b.date)) continue;
         seen.add(b.date);
-        map.set(b.date, { date: b.date, room: b.room, on: !!b.room, unsure: b.unsure });
+        map.set(b.date, { date: b.date, room: b.room, on: !!b.room && b.date >= todayIso, unsure: b.unsure });
       }
       days = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
       renderDays();
@@ -468,6 +468,7 @@
     return 0;
   }
   const today = new Date();
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   // Jahr wählen, wenn keins zu sehen ist: das, bei dem das Datum am nächsten an heute liegt
   function guessYear(m, d) {
     let best = today.getFullYear(), bestDiff = Infinity;
@@ -483,7 +484,7 @@
   function detectPeriod(text) {
     const hint = $('period-hint').value.trim();
     const src = hint || text;
-    let m = src.match(new RegExp(`(${MONTH_RE})[a-z.]*\\s*(\\d{4})`, 'i'));
+    let m = src.match(new RegExp(`(${MONTH_RE})[a-zä. ]{0,8}?(\\d{4})`, 'i'));
     if (m) return { m: monthIndex(m[1]), y: +m[2] };
     m = src.match(/(?<!\d)(\d{1,2})\s*[./]\s*(20\d\d)(?!\d)/);
     if (m && +m[1] >= 1 && +m[1] <= 12) return { m: +m[1], y: +m[2] };
@@ -496,30 +497,35 @@
   function makeRoomFinder() {
     const known = $('known-rooms').value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
     const norm = s => s.toLowerCase().replace(/\s+/g, '').replace(/,/g, '.').replace(/[–—]/g, '-');
-    if (known.length) {
-      const list = known.map(name => ({ name, n: norm(name) })).sort((a, b) => b.n.length - a.n.length);
-      return text => {
-        const t = norm(text);
-        for (const k of list) {
-          const esc = k.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          if (new RegExp(`(?<![0-9a-zäöü])${esc}(?![0-9a-zäöü])`).test(t)) return k.name;
-        }
-        return '';
-      };
-    }
+    const cutRe = /(v\s*m\s*[-–—~]?\s*)?[cg]{1,2}[uv][tf]\s*[:.]?\s*(\d{1,3})(?!\d)/i;
     const patterns = [
       /\b(?:Raum|Room|Büro|Buero|Desk|Platz|Arbeitsplatz|Besprechungsraum|Meetingraum)\s*[-:#.]?\s*[A-Za-zÄÖÜäöü0-9][\w.\-\/]*(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?/i,
       /\b[A-Z]{1,3}\s?\d{1,2}[.\-]\d{1,3}[a-z]?\b/,
       /(?<![\d.])\d{1,2}[.\-]\d{2,3}[a-z]?(?![\d.])/
     ];
-    return text => {
+    const list = known.map(name => ({ name, n: norm(name) })).sort((x, y) => y.n.length - x.n.length);
+    const finder = text => {
+      finder.fuzzy = false;
+      const t = norm(text);
+      for (const k of list) {
+        const esc = k.n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (new RegExp(`(?<![0-9a-zäöü])${esc}(?![0-9a-zäöü])`).test(t)) return k.name;
+      }
       const clean = text
         .replace(/(?<!\d)\d{1,2}\.\s?\d{1,2}\.(?:\s?\d{2,4})?/g, ' ')  // Daten
         .replace(/\b\d{1,2}[:.]\d{2}\s*(?:uhr|h)?\s*[-–]\s*\d{1,2}[:.]\d{2}/gi, ' ') // Uhrzeiten
         .replace(/\b\d{1,2}:\d{2}\b/g, ' ');
+      const c = text.match(cutRe);
+      if (c) {
+        // unsicher, wenn „Cut“ nur ungefähr gelesen wurde (z. B. „Ccut“, „Gut“)
+        finder.fuzzy = !/^(vm-?)?cut:?\d/i.test(c[0].replace(/\s/g, ''));
+        return (c[1] ? 'VM-Cut ' : 'Cut ') + c[2];
+      }
+      finder.fuzzy = true;
       for (const p of patterns) { const m = clean.match(p); if (m) return m[0].trim(); }
       return '';
     };
+    return finder;
   }
 
   let lastProblem = '';
@@ -529,6 +535,11 @@
     const findRoom = makeRoomFinder();
     const lines = (data.lines || []).map(l => ({ text: l.text.trim(), conf: l.confidence })).filter(l => l.text);
     const period = detectPeriod(data.text || '');
+
+    if (period) {
+      const byHeaders = extractByHeaders(data, findRoom, period);
+      if (byHeaders && byHeaders.length) return byHeaders;
+    }
 
     // Variante A: Liste mit ausgeschriebenen Daten („Mo 09.11.“, „Montag, 9. November 2026“)
     const numRe = /(?<!\d)(\d{1,2})\.\s?(\d{1,2})\.(?:\s?(\d{4}|\d{2})(?!\d))?/;
@@ -627,6 +638,97 @@
     }
     gridResults.sort((a, b) => a.date.localeCompare(b.date));
     return gridResults.length >= listHits.length ? gridResults : listHits;
+  }
+
+  // Monatsansicht mit Spaltenköpfen „Mo Di Mi Do Fr Sa So“: Die Spalte ergibt den Wochentag,
+  // die Tageszahlen einer Zeile ergeben den Montag dieser Woche. So funktioniert es auch,
+  // wenn einzelne (z. B. graue) Tageszahlen nicht gelesen werden.
+  function extractByHeaders(data, findRoom, period) {
+    const lines = (data.lines || []).filter(l => l.words && l.words.length);
+    const KEYS = ['mo', 'di', 'mi', 'do', 'fr', 'sa', 'so'];
+    const LONG = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'];
+    let header = null;
+    for (const l of lines) {
+      const hits = [];
+      for (const w of l.words) {
+        const t = w.text.toLowerCase().replace(/[^a-zäöü]/g, '');
+        const i = KEYS.indexOf(t.slice(0, 2));
+        if (i >= 0 && t.length >= 2 && LONG[i].startsWith(t)) hits.push({ i, cx: (w.bbox.x0 + w.bbox.x1) / 2, y: w.bbox.y1 });
+      }
+      if (new Set(hits.map(h => h.i)).size >= 5) { header = hits; break; }
+    }
+    if (!header) return null;
+
+    // Spaltenmitten per Ausgleichsgerade: cx = a + b * Spalte
+    const n = header.length;
+    const mi = header.reduce((s, h) => s + h.i, 0) / n, mx = header.reduce((s, h) => s + h.cx, 0) / n;
+    const b = header.reduce((s, h) => s + (h.i - mi) * (h.cx - mx), 0) / header.reduce((s, h) => s + (h.i - mi) ** 2, 0);
+    const a = mx - b * mi;
+    if (!(b > 0)) return null;
+    const colOf = x => Math.round((x - a) / b);
+    const headerY = Math.max(...header.map(h => h.y));
+
+    // Tageszahlen sammeln und zu Wochenzeilen gruppieren
+    // Nur Zeilen, die fast nur aus Zahlen bestehen (z. B. „KW46 9 10 11 12 13 14 15“),
+    // damit Zahlen aus Terminen wie „21 PT“ oder „Cut 08“ nicht als Tag gelten.
+    const numberLines = lines.filter(l => l.bbox.y0 > headerY - 2 && l.words.filter(w => /^(\d{1,2}\.?|kw\w{0,3}|\W+)$/i.test(w.text.trim())).length >= l.words.length * 0.6);
+    const words = numberLines.flatMap(l => l.words);
+    const nums = words.filter(w => /^\d{1,2}\.?$/.test(w.text.trim()))
+      .map(w => ({ n: parseInt(w.text, 10), col: colOf((w.bbox.x0 + w.bbox.x1) / 2), y: w.bbox.y0, h: w.bbox.y1 - w.bbox.y0 }))
+      .filter(w => w.n >= 1 && w.n <= 31 && w.col >= 0 && w.col <= 6);
+    if (!nums.length) return null;
+    const medH = median(nums.map(w => w.h)) || 20;
+    const rows = [];
+    for (const w of [...nums].sort((p, q) => p.y - q.y)) {
+      const r = rows.find(r => Math.abs(r.y - w.y) < medH * 0.8);
+      if (r) r.items.push(w); else rows.push({ y: w.y, items: [w] });
+    }
+    rows.sort((p, q) => p.y - q.y);
+
+    // Montag jeder Zeile bestimmen (Mehrheitsentscheid über alle gelesenen Zahlen)
+    for (const r of rows) {
+      const votes = new Map();
+      for (const w of r.items) {
+        for (const off of [0, -1, 1]) {
+          const d = new Date(period.y, period.m - 1 + off, w.n);
+          if (d.getDate() !== w.n) continue;
+          d.setDate(d.getDate() - w.col);
+          if (d.getDay() === 1) { const k = d.getTime(); votes.set(k, (votes.get(k) || 0) + 1); break; }
+        }
+      }
+      let best = null, bestV = 0;
+      for (const [k, v] of votes) if (v > bestV) { best = k; bestV = v; }
+      r.monday = best;
+    }
+    // Zeilen ohne lesbare Zahl aus den Nachbarzeilen ergänzen
+    for (let i = 1; i < rows.length; i++) if (rows[i].monday == null && rows[i - 1].monday != null) rows[i].monday = rows[i - 1].monday + 7 * 864e5;
+    for (let i = rows.length - 2; i >= 0; i--) if (rows[i].monday == null && rows[i + 1].monday != null) rows[i].monday = rows[i + 1].monday - 7 * 864e5;
+    // Gruppierung kann Zeilen doppeln (z. B. KW-Nummern): gleiche Woche zusammenfassen
+    const weeks = rows.filter(r => r.monday != null);
+    if (!weeks.length) return null;
+
+    // Buchungen: jede Textzeile nach Spalten aufteilen und den Raum suchen
+    const results = [];
+    for (const l of lines) {
+      if (l.bbox.y0 <= headerY) continue;
+      const week = [...weeks].reverse().find(r => r.y <= l.bbox.y0 + medH * 0.3);
+      if (!week) continue;
+      const perCol = new Map();
+      for (const w of l.words) {
+        const c = colOf((w.bbox.x0 + w.bbox.x1) / 2);
+        if (c < 0 || c > 4) continue;   // nur Mo–Fr
+        if (!perCol.has(c)) perCol.set(c, []);
+        perCol.get(c).push(w);
+      }
+      for (const [c, ws] of perCol) {
+        const room = findRoom(ws.map(w => w.text).join(' '));
+        if (!room) continue;
+        const d = new Date(week.monday);
+        d.setDate(d.getDate() + c);
+        results.push({ date: iso(d.getFullYear(), d.getMonth() + 1, d.getDate()), room, unsure: findRoom.fuzzy === undefined ? Math.min(...ws.map(w => w.confidence)) < 60 : findRoom.fuzzy });
+      }
+    }
+    return results.sort((p, q) => p.date.localeCompare(q.date));
   }
 
   function median(arr) {
